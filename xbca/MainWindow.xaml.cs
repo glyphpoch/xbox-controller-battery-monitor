@@ -161,7 +161,7 @@ namespace xbca
 
             if(display == true)
             {
-                m_notifyIcon.BalloonTipText = "Controller type: " + type + " Battery status: " + value;
+                m_notifyIcon.BalloonTipText = "Battery type: " + type + " Battery status: " + value;
                 //m_notifyIcon.BalloonTipTitle = "XBCA";
                 m_notifyIcon.ShowBalloonTip(2000);
             }

@@ -75,6 +75,19 @@ namespace xbca
             }
         }
 
+        public void Vibrate()
+        {
+            try
+            {
+                tryVibrate();
+            }
+            catch(Exception ex)
+            {
+                Console.WriteLine(ex.ToString());
+            }
+
+        }
+
         private void Poll()
         {
             byte[] type = new byte[XInputConstants.XUSER_MAX_COUNT];
@@ -112,8 +125,11 @@ namespace xbca
                                 //string des = GetEnumDescription((BatteryTypes)type[i]);
                                 RaiseTheEvent(true, GetEnumDescription((BatteryTypes)type[i]), GetEnumDescription((BatteryLevel)value[i]));
                                 notified[i] = true;
-                            }
-                            
+                            }                         
+                        }
+                        else
+                        {
+                            notified[i] = false;
                         }
                     }
                 }
@@ -123,7 +139,6 @@ namespace xbca
                 }
 #endif
                 Console.WriteLine("sleep for a minute");
-
                 for (var s = 0; s < 600 && (m_Run); ++s)
                 {
                     Thread.Sleep(100);
