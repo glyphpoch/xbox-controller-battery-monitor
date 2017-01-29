@@ -48,22 +48,30 @@ namespace xbca
         private Settings m_Settings;
         private volatile bool m_Run = true;
 
-        public delegate void myDelegate(bool display, string type, string value);
+        public delegate void myDelegate(bool display, int device, string type, string value);
         public static event myDelegate TestEvent;
 
-        Thread pollInfo;
+        private int m_State = -1;
+
+        private Thread pollInfo;
 
         public void Start(Settings settings)
         {
             m_Settings = settings;
             pollInfo = new Thread(Poll);
             pollInfo.Start();
+
+            m_State = 1;
         }
 
         public void Stop()
         {
             m_Run = false;
-            pollInfo.Join();
+
+            if(pollInfo.ThreadState == ThreadState.Running)
+            {
+                pollInfo.Join();
+            }         
         }
 
         public void UpdateSettings(Settings settings)
@@ -86,6 +94,11 @@ namespace xbca
                 Console.WriteLine(ex.ToString());
             }
 
+        }
+
+        public int State()
+        {
+            return m_State;
         }
 
         private void Poll()
@@ -113,19 +126,31 @@ namespace xbca
 
                 if(result == true)
                 {
-                    //Console.WriteLine(numControllers.ToString() + " controllers connected");
+                    //
+                    // Check for all possible controllers. XUSER_MAX_COUNT is 4. Defined in Xinput.h and copied to Constants.cs.
+                    //
                     for (int i = 0; i < XInputConstants.XUSER_MAX_COUNT; ++i)
                     {
                         if (type[i] != (byte)BatteryTypes.BATTERY_TYPE_DISCONNECTED)
                         {
-                            //Console.WriteLine("Controller: " + (i + 1).ToString() + " Type: " + Enum.GetName(typeof(BatteryTypes), type[i])
-                            //    + " Battery level: " + Enum.GetName(typeof(BatteryLevel), value[i]));
+                            //
+                            // Notify the user only once, unless otherwise specified.
+                            // Values will be 0,1,2,3 - More in Constants.
+                            //
                             if(notified[i] == false && value[i] <= m_Settings.Level)
                             {
-                                //string des = GetEnumDescription((BatteryTypes)type[i]);
-                                RaiseTheEvent(true, GetEnumDescription((BatteryTypes)type[i]), GetEnumDescription((BatteryLevel)value[i]));
+                                //
+                                // Raise an event which reports the status of the battery to the main app.
+                                // Alternative Enum name: Enum.GetName(typeof(BatteryTypes), type[i])
+                                //
+                                RaiseTheEvent(true, i, GetEnumDescription((BatteryTypes)type[i]), GetEnumDescription((BatteryLevel)value[i]));
                                 notified[i] = true;
-                            }                         
+                            }
+                            
+                            if(notified[i] == true && value[i] > m_Settings.Level)
+                            {
+                                notified[i] = false;
+                            }                    
                         }
                         else
                         {
@@ -135,11 +160,17 @@ namespace xbca
                 }
                 else
                 {
-                    //RaiseTheEvent(false, "", "");
+                    //
+                    // If no controllers are connected just reset the notified array. It's initialized to false by default.
+                    //
+                    notified = new bool[XInputConstants.XUSER_MAX_COUNT];
                 }
 #endif
                 Console.WriteLine("sleep for a minute");
-                for (var s = 0; s < 600 && (m_Run); ++s)
+                //
+                // Sleep for the defined times unless Stop request is sent by the main application.
+                //
+                for (int s = 0; s < 600 && (m_Run); ++s)
                 {
                     Thread.Sleep(100);
                 }
@@ -148,14 +179,14 @@ namespace xbca
             }
         }
 
-        private void RaiseTheEvent(bool display, string type, string value)
+        private void RaiseTheEvent(bool display, int device, string type, string value)
         {
             Console.WriteLine("raising event in thread");
 
             //
             // Equals checking if TestEvent == null and then calling TestEvent()
             //
-            TestEvent?.Invoke(display, type, value);
+            TestEvent?.Invoke(display, device, type, value);
         }
 
         private static string GetEnumDescription(Enum value)
