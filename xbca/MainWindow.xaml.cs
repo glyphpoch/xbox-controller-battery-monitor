@@ -147,6 +147,7 @@ namespace xbca
 
 #if DEBUG
             Console.WriteLine("onClosing");
+
 #endif
 
             base.OnClosing(e);
