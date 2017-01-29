@@ -6,7 +6,7 @@
         xmlns:local="clr-namespace:xbca"
         mc:Ignorable="d"
         Icon="chemistry.ico"
-        Title="MainWindow" Height="350" Width="525">
+        Title="MainWindow" Height="350" Width="625">
     <Grid>
         <Grid.RowDefinitions>
             <RowDefinition Height="53*"/>
@@ -20,6 +20,8 @@
         <Button x:Name="btn_debugtray" Content="Debug Tray" HorizontalAlignment="Left" Margin="90,11,0,0" VerticalAlignment="Top" Width="75" Click="btn_debugtray_Click"/>
         <Button x:Name="btn_debugbattery" Content="Dbg Battery" HorizontalAlignment="Left" Margin="278,11,0,0" VerticalAlignment="Top" Width="75" Click="btn_debugbattery_Click"/>
         <Button x:Name="btn_debugrun" Content="Start" HorizontalAlignment="Left" Margin="358,11,0,0" VerticalAlignment="Top" Width="75" Click="btn_debugrun_Click"/>
+        <Button x:Name="btn_debugbeep" Content="Dbg Beep" HorizontalAlignment="Left" Margin="532,10,0,0" VerticalAlignment="Top" Width="75" Click="btn_debugbeep_Click"/>
+        <Button x:Name="btn_debugvibrate" Content="Dbg Vibrate" HorizontalAlignment="Left" Margin="452,11,0,0" VerticalAlignment="Top" Width="75" Click="btn_debugvibrate_Click"/>
 
     </Grid>
 </Window>

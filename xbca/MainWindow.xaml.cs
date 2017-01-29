@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.ComponentModel;
 using System.IO;
 using System.Linq;
+using System.Media;
 using System.Reflection;
 using System.Text;
 using System.Text.RegularExpressions;
@@ -105,6 +106,17 @@ namespace xbca
 
         }
 
+        private void btn_debugbeep_Click(object sender, RoutedEventArgs e)
+        {
+            Thread beepThread = new Thread(DoBeep);
+            beepThread.Start();
+        }
+
+        private void btn_debugvibrate_Click(object sender, RoutedEventArgs e)
+        {
+            Xd.Vibrate();
+        }
+
         //
         // By clicking the notification bubble we restore the application back from system tray.
         //
@@ -128,7 +140,10 @@ namespace xbca
 
         protected override void OnClosing(CancelEventArgs e)
         {
-            Xd.Stop();
+            if(Xd.State() == 1)
+            {
+                Xd.Stop();
+            }            
 
 #if DEBUG
             Console.WriteLine("onClosing");
@@ -149,23 +164,15 @@ namespace xbca
             base.OnClosed(e);
         }
 
-        private void ReceiveData(bool display, string type, string value)
+        private void ReceiveData(bool display, int device, string type, string value)
         {
-            //MessageBox.Show(msg);
-            //Dispatcher.BeginInvoke((Action)delegate ()
-            //{
-            //    tb.Text = msg;
-            //});
-
-            //System.Windows.Forms.NotifyIcon notify = new System.Windows.Forms.NotifyIcon();
-
             if(display == true)
             {
-                m_notifyIcon.BalloonTipText = "Battery type: " + type + " Battery status: " + value;
-                //m_notifyIcon.BalloonTipTitle = "XBCA";
-                m_notifyIcon.ShowBalloonTip(2000);
-            }
+                m_notifyIcon.BalloonTipText = "ControllerID: " + device.ToString() + " Battery type: " + type + " Battery status: " + value;
+                m_notifyIcon.ShowBalloonTip(3000);
 
+                SystemSounds.Beep.Play();
+            }
 
             Console.WriteLine("data recieved from thread");
 
@@ -261,6 +268,16 @@ namespace xbca
             this.Show();
 
             WindowState = WindowState.Normal;
+        }
+
+        //
+        // Beep twice with a small pause between the two.
+        //
+        private void DoBeep()
+        {
+            SystemSounds.Beep.Play();
+            Thread.Sleep(500);
+            SystemSounds.Beep.Play();
         }
 
         #endregion
