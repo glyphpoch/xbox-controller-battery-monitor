@@ -308,6 +308,10 @@ namespace xbca
                     //
                     m_Items[i].ID = -1;
                 }
+                else
+                {
+                    m_Items[i].ID = i;
+                }
 
                 m_Items[i].Type = Constants.GetEnumDescription((BatteryTypes)type[i]);
                 m_Items[i].Charge = Constants.GetEnumDescription((BatteryLevel)value[i]);
