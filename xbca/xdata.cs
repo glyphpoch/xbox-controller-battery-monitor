@@ -48,8 +48,11 @@ namespace xbca
         private Settings m_Settings;
         private volatile bool m_Run = true;
 
-        public delegate void myDelegate(bool display, int device, string type, string value);
-        public static event myDelegate TestEvent;
+        public delegate void NotificationDelegate(bool display, int device, string type, string value);
+        public static event NotificationDelegate NotificationEvent;
+
+        public delegate void DataDelegate(byte[] type, byte[] value);
+        public static event DataDelegate DataEvent;
 
         private int m_State = -1;
 
@@ -68,7 +71,7 @@ namespace xbca
         {
             m_Run = false;
 
-            if(pollInfo.ThreadState == ThreadState.Running)
+            if(m_State == 1 && pollInfo.ThreadState == ThreadState.Running)
             {
                 pollInfo.Join();
             }         
@@ -114,13 +117,14 @@ namespace xbca
 
             int numOfControllers = 0;
             bool result = false;
-
-            while (m_Run)
+            try
             {
+                while (m_Run)
+                {
 #if DEBUG
-                Console.WriteLine(dummy() + " " + GetEnumDescription((BatteryTypes)1));
-                                     
-                RaiseTheEvent(false, "", "");
+                    Console.WriteLine(dummy() + " " + Constants.GetEnumDescription((BatteryTypes)1));
+
+                    RaiseTheEvent(false, 0, "", "");
 #else
                 result = getBatteryInfo(type, value, ref numOfControllers);
 
@@ -143,7 +147,7 @@ namespace xbca
                                 // Raise an event which reports the status of the battery to the main app.
                                 // Alternative Enum name: Enum.GetName(typeof(BatteryTypes), type[i])
                                 //
-                                RaiseTheEvent(true, i, GetEnumDescription((BatteryTypes)type[i]), GetEnumDescription((BatteryLevel)value[i]));
+                                RaiseTheEvent(true, i, Constants.GetEnumDescription((BatteryTypes)type[i]), Constants.GetEnumDescription((BatteryLevel)value[i]));
                                 notified[i] = true;
                             }
                             
@@ -166,17 +170,28 @@ namespace xbca
                     notified = new bool[XInputConstants.XUSER_MAX_COUNT];
                 }
 #endif
-                Console.WriteLine("sleep for a minute");
-                //
-                // Sleep for the defined times unless Stop request is sent by the main application.
-                //
-                for (int s = 0; s < 600 && (m_Run); ++s)
-                {
-                    Thread.Sleep(100);
-                }
+                    //
+                    // Send data about the controllers to the main application.
+                    //
+                    RaiseDataEvent(type, value);
 
-                //Thread.Sleep(60000);
+                    Console.WriteLine("sleep for a minute");
+                    //
+                    // Sleep for the defined times unless Stop request is sent by the main application.
+                    //
+                    for (int s = 0; s < 600 && (m_Run); ++s)
+                    {
+                        Thread.Sleep(100);
+                    }
+                }
             }
+            catch(Exception ex)
+            {
+                Console.WriteLine(ex.ToString());
+                m_State = -1;
+            }
+
+            m_State = 0;
         }
 
         private void RaiseTheEvent(bool display, int device, string type, string value)
@@ -186,23 +201,14 @@ namespace xbca
             //
             // Equals checking if TestEvent == null and then calling TestEvent()
             //
-            TestEvent?.Invoke(display, device, type, value);
+            NotificationEvent?.Invoke(display, device, type, value);
         }
 
-        private static string GetEnumDescription(Enum value)
+        private void RaiseDataEvent(byte[] type, byte[] value)
         {
-            FieldInfo fi = value.GetType().GetField(value.ToString());
+            Console.WriteLine("raising data event in thread");
 
-            DescriptionAttribute[] attributes =
-                (DescriptionAttribute[])fi.GetCustomAttributes(
-                typeof(DescriptionAttribute),
-                false);
-
-            if (attributes != null &&
-                attributes.Length > 0)
-                return attributes[0].Description;
-            else
-                return value.ToString();
+            DataEvent?.Invoke(type, value);
         }
     }
 }
