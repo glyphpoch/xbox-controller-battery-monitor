@@ -76,7 +76,7 @@ namespace xbca
         {
             InitializeComponent();
 
-            Init();
+            //Init();
         }
 
 #region ////////- Event handlers -\\\\\\\\\
@@ -145,6 +145,8 @@ namespace xbca
             Console.WriteLine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData));
 
             Console.WriteLine(m_SettingsMng.Config.NotifyEvery.ToString());
+
+            Console.WriteLine(m_SettingsMng.ToString());
         }
 
         //
@@ -157,7 +159,7 @@ namespace xbca
 
         private void Window_Loaded(object sender, RoutedEventArgs e)
         {
-            //Init();
+            Init();
         }
 
         //
@@ -172,7 +174,11 @@ namespace xbca
             else
             {
                 m_storedWindowState = WindowState;
-            }          
+            }
+
+#if DEBUG
+            Console.WriteLine("statechanged");
+#endif
 
             base.OnStateChanged(e);
         }
@@ -321,6 +327,7 @@ namespace xbca
                 //
                 System.Windows.Threading.DispatcherTimer dispatcherTimer = new System.Windows.Threading.DispatcherTimer();
                 dispatcherTimer.Tick += new EventHandler(dispatcherTimer_Tick);
+                dispatcherTimer.Interval = new TimeSpan(0, 5, 0);
                 dispatcherTimer.Start();
 
                 //
@@ -335,8 +342,8 @@ namespace xbca
                 // Start the polling thread.
                 //
                 Xd.Start(m_SettingsMng.Config);
-                tb_status.Text = "Thread running";
-                //OnUIThread(() => tb_status.Text = "Thread running");
+                //tb_status.Text = "Thread running";
+                OnUIThread(() => tb_status.Text = "Thread running");
 
                 //
                 // Delete or remove registry entry for running on Windows startup based on user set options.
@@ -366,7 +373,40 @@ namespace xbca
         //
         private bool InitSettings(bool debug = false)
         {
-            return m_SettingsMng.LoadConfig();
+            bool result = m_SettingsMng.LoadConfig();
+
+            menu_startup.IsChecked = m_SettingsMng.Config.WinStart;
+            //menu_closeToTray.IsChecked = m_SettingsMng.Config.WinStart;
+            menu_startMinimized.IsChecked = m_SettingsMng.Config.StartMinimized;
+
+            if(m_SettingsMng.Config.Level == 1)
+            {
+                menu_low.IsChecked = true;
+            }
+            else if(m_SettingsMng.Config.Level == 2)
+            {
+                menu_medium.IsChecked = true;
+            }
+            else if (m_SettingsMng.Config.Level == 3)
+            {
+                menu_high.IsChecked = true;
+            }
+
+            /////
+            if (m_SettingsMng.Config.NotifyEvery == 0)
+            {
+                menu_once.IsChecked = true;
+            }
+            else if (m_SettingsMng.Config.NotifyEvery == 1)
+            {
+                menu_onehour.IsChecked = true;
+            }
+            else if (m_SettingsMng.Config.NotifyEvery == 2)
+            {
+                menu_4hours.IsChecked = true;
+            }
+
+            return result;
         }
 
         //
@@ -465,5 +505,60 @@ namespace xbca
         }
 
         #endregion
+
+        private void menuItem_Click(object sender, RoutedEventArgs e)
+        {
+            bool check = ((MenuItem)sender).IsChecked;
+            ((MenuItem)sender).IsChecked = !check;
+
+            if (sender == menu_startup)
+            {
+                m_SettingsMng.Config.WinStart = !check;
+            }
+            else if(sender == menu_startMinimized)
+            {
+                m_SettingsMng.Config.StartMinimized = !check;
+            }
+            else if(sender == menu_closeToTray)
+            {
+                
+            }
+            else if(sender == menu_low)
+            {
+                m_SettingsMng.Config.Level = 1;
+                menu_medium.IsChecked = false;
+                menu_high.IsChecked = false;
+            }
+            else if (sender == menu_medium)
+            {
+                m_SettingsMng.Config.Level = 2;
+                menu_low.IsChecked = false;
+                menu_high.IsChecked = false;
+            }
+            else if (sender == menu_high)
+            {
+                m_SettingsMng.Config.Level = 3;
+                menu_low.IsChecked = false;
+                menu_medium.IsChecked = false;               
+            }
+            else if (sender == menu_once)
+            {
+                m_SettingsMng.Config.NotifyEvery = 0;
+                menu_onehour.IsChecked = false;
+                menu_4hours.IsChecked = false;
+            }
+            else if (sender == menu_onehour)
+            {
+                m_SettingsMng.Config.NotifyEvery = 1;
+                menu_once.IsChecked = false;
+                menu_4hours.IsChecked = false;
+            }
+            else if (sender == menu_4hours)
+            {
+                m_SettingsMng.Config.NotifyEvery = 2;
+                menu_once.IsChecked = false;
+                menu_onehour.IsChecked = false;
+            }        
+        }
     }
 }
