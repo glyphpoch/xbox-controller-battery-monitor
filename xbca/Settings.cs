@@ -6,19 +6,23 @@ using System.Threading.Tasks;
 
 namespace xbca
 {
-    class Settings
+    [Serializable()]
+    public class Settings
     {
+        // http://stackoverflow.com/questions/453161/best-practice-to-save-application-settings-in-a-windows-forms-application
+
         public Settings()
         {
-            Minimize = true;
+            StartMinimized = true;
             Beep = true;
-            Level = 2;
-            WinStart = true;
+            Level = 1;
+            WinStart = false;
+            NotifyEvery = 0;
         }
         //
         // Minimize to system tray if True.
         //
-        public bool Minimize { get; set; }
+        public bool StartMinimized { get; set; }
         //
         // Beep with notification if True.
         //
@@ -32,12 +36,6 @@ namespace xbca
         //
         public bool WinStart { get; set; }
 
-        //
-        // Settings constants.
-        //
-        public const string MinimizeStr = "minimize";
-        public const string BeepStr = "beep";
-        public const string LevelStr = "level";
-        public const string WinStartStr = "startup";
+        public int NotifyEvery { get; set; }
     }
 }

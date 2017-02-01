@@ -14,30 +14,32 @@
             <Setter Property="TextTrimming" Value="CharacterEllipsis" />
         </Style>
     </Window.Resources>
-    
+
     <Grid>
 
         <Grid.RowDefinitions>
-            <RowDefinition Height="53"/>
-            <RowDefinition Height="232*"/>
+            <RowDefinition Height="86"/>
+            <RowDefinition/>
             <RowDefinition Height="23"/>
         </Grid.RowDefinitions>
 
         <DataGrid x:Name="datagrid_controller" HorizontalAlignment="Stretch" Margin="10,10,10,10" VerticalAlignment="Stretch" Grid.Row="1" Loaded="controller_data_Loaded"/>
 
-        <Button x:Name="btn_debuggrid" Content="Debug Grid" HorizontalAlignment="Left" Margin="170,10,0,0" VerticalAlignment="Top" Width="75" Click="btn_debuggrid_Click" IsEnabled="False"/>
-        <Button x:Name="btn_debugStart" Content="Debug Startup" HorizontalAlignment="Left" Margin="10,10,0,0" VerticalAlignment="Top" Width="75" Click="btn_debugStart_Click" IsEnabled="False"/>
-        <Button x:Name="btn_debugtray" Content="Debug Tray" HorizontalAlignment="Left" Margin="90,11,0,0" VerticalAlignment="Top" Width="75" Click="btn_debugtray_Click" IsEnabled="False"/>
-        <Button x:Name="btn_debugbattery" Content="Dbg Battery" HorizontalAlignment="Left" Margin="250,10,0,0" VerticalAlignment="Top" Width="75" Click="btn_debugbattery_Click" IsEnabled="False"/>
-        <Button x:Name="btn_debugrun" Content="Start" HorizontalAlignment="Left" Margin="330,11,0,0" VerticalAlignment="Top" Width="75" Click="btn_debugrun_Click" IsEnabled="False"/>
-        <Button x:Name="btn_debugbeep" Content="Dbg Beep" HorizontalAlignment="Left" Margin="532,10,0,0" VerticalAlignment="Top" Width="75" Click="btn_debugbeep_Click"/>
-        <Button x:Name="btn_debugvibrate" Content="Dbg Vibrate" HorizontalAlignment="Left" Margin="452,11,0,0" VerticalAlignment="Top" Width="75" Click="btn_debugvibrate_Click"/>
-        <Button x:Name="btn_debugkill" Content="DbgKill" HorizontalAlignment="Left" Margin="410,12,0,0" VerticalAlignment="Top" Width="37" Click="btn_debugkill_Click" IsEnabled="False"/>
-        
+        <Button x:Name="btn_debuggrid" Content="Debug Grid" HorizontalAlignment="Left" Margin="170,10,0,0" VerticalAlignment="Top" Width="75" Click="btn_debuggrid_Click" IsEnabled="False" Height="22"/>
+        <Button x:Name="btn_debugStart" Content="Debug Startup" HorizontalAlignment="Left" Margin="10,10,0,0" VerticalAlignment="Top" Width="75" Click="btn_debugStart_Click" IsEnabled="False" Height="22"/>
+        <Button x:Name="btn_debugtray" Content="Debug Tray" HorizontalAlignment="Left" Margin="90,11,0,0" VerticalAlignment="Top" Width="75" Click="btn_debugtray_Click" IsEnabled="False" Height="22"/>
+        <Button x:Name="btn_debugbattery" Content="Dbg Battery" HorizontalAlignment="Left" Margin="250,10,0,0" VerticalAlignment="Top" Width="75" Click="btn_debugbattery_Click" IsEnabled="False" Height="22"/>
+        <Button x:Name="btn_debugrun" Content="Start" HorizontalAlignment="Left" Margin="330,11,0,0" VerticalAlignment="Top" Width="75" Click="btn_debugrun_Click" IsEnabled="False" Height="22"/>
+        <Button x:Name="btn_debugbeep" Content="Dbg Beep" HorizontalAlignment="Left" Margin="532,10,0,0" VerticalAlignment="Top" Width="75" Click="btn_debugbeep_Click" Height="22"/>
+        <Button x:Name="btn_debugvibrate" Content="Dbg Vibrate" HorizontalAlignment="Left" Margin="452,11,0,0" VerticalAlignment="Top" Width="75" Click="btn_debugvibrate_Click" Height="22"/>
+        <Button x:Name="btn_debugkill" Content="DbgKill" HorizontalAlignment="Left" Margin="410,12,0,0" VerticalAlignment="Top" Width="37" Click="btn_debugkill_Click" IsEnabled="False" Height="22"/>
+
         <StatusBar Grid.Row="2">
             <TextBlock>Status:</TextBlock>
             <TextBlock x:Name="tb_status"></TextBlock>
         </StatusBar>
+        
+        <Button x:Name="btn_debugxml" Content="Dbg Settings" HorizontalAlignment="Left" Margin="10,37,0,0" VerticalAlignment="Top" Width="75" Click="btn_debugxml_Click"/>
 
     </Grid>
 </Window>

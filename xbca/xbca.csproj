@@ -60,6 +60,7 @@
     <Compile Include="Constants.cs" />
     <Compile Include="Controller.cs" />
     <Compile Include="Settings.cs" />
+    <Compile Include="SettingsManager.cs" />
     <Compile Include="xdata.cs" />
     <Page Include="MainWindow.xaml">
       <Generator>MSBuild:Compile</Generator>

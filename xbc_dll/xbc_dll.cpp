@@ -15,6 +15,9 @@ extern "C" __declspec(dllexport) bool getBatteryInfo(BYTE* type, BYTE* level, in
 		// Simply get the state of the controller from XInput.
 		dwResult = XInputGetState(i, &state);
 
+		level[i] = static_cast<BYTE>(BATTERY_LEVEL_FULL);
+		type[i] = static_cast<BYTE>(BATTERY_TYPE_DISCONNECTED);
+
 		if (dwResult == ERROR_SUCCESS)
 		{
 			// Controller is connected 
