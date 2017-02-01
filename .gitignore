@@ -6,3 +6,4 @@ bin/
 *.ipch
 *.db
 *.opendb
+*.TMP

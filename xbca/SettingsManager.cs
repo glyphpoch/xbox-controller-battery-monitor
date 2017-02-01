@@ -11,17 +11,17 @@ namespace xbca
     {
         private Settings m_Settings = new Settings();
 
-        private string m_Appdata = "";
-        private string m_SettingsRelative = "XBCA\\settings.xml";
-        private string m_PathToSettings = "";
+        private string m_PathToSettings = null;
 
         public SettingsManager()
         {
-            m_Appdata = Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData);
-            Console.WriteLine(m_Appdata);
+            string appdata = Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData);
+            string settingsRelative = "XBCA\\settings.xml";
+        
+            //Console.WriteLine(m_Appdata);
 
-            m_PathToSettings = System.IO.Path.Combine(m_Appdata, m_SettingsRelative);
-            Console.WriteLine(m_PathToSettings);
+            m_PathToSettings = System.IO.Path.Combine(appdata, settingsRelative);
+            //Console.WriteLine(m_PathToSettings);
         }
 
         public Settings Config
@@ -83,6 +83,15 @@ namespace xbca
                 Console.WriteLine("couldnt save config" + ex.ToString());
                 return false;
             }
+        }
+
+        public override string ToString()
+        {
+            string settings = m_Settings.WinStart.ToString() + " " + m_Settings.StartMinimized.ToString()
+                + " " + m_Settings.Level.ToString() + " " + m_Settings.Beep.ToString() + " " + m_Settings.NotifyEvery.ToString();
+
+            return settings;
+            //return base.ToString();
         }
     }
 }

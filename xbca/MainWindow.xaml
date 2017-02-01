@@ -6,7 +6,8 @@
         xmlns:local="clr-namespace:xbca"
         mc:Ignorable="d"
         Icon="chemistry.ico"
-        Title="MainWindow" Height="350" Width="625">
+        Title="MainWindow" Height="350" Width="625"
+        Loaded="Window_Loaded">
 
     <Window.Resources>
         <Style TargetType="TextBlock" x:Key="StatusBarTextBlock">
@@ -18,28 +19,53 @@
     <Grid>
 
         <Grid.RowDefinitions>
-            <RowDefinition Height="86"/>
+            <RowDefinition Height="20"/>
+            <RowDefinition Height="55"/>
             <RowDefinition/>
             <RowDefinition Height="23"/>
         </Grid.RowDefinitions>
 
-        <DataGrid x:Name="datagrid_controller" HorizontalAlignment="Stretch" Margin="10,10,10,10" VerticalAlignment="Stretch" Grid.Row="1" Loaded="controller_data_Loaded"/>
+        <DataGrid x:Name="datagrid_controller" HorizontalAlignment="Stretch" Margin="10,10,10,10" VerticalAlignment="Stretch" Grid.Row="2" Loaded="controller_data_Loaded"/>
 
-        <Button x:Name="btn_debuggrid" Content="Debug Grid" HorizontalAlignment="Left" Margin="170,10,0,0" VerticalAlignment="Top" Width="75" Click="btn_debuggrid_Click" IsEnabled="False" Height="22"/>
-        <Button x:Name="btn_debugStart" Content="Debug Startup" HorizontalAlignment="Left" Margin="10,10,0,0" VerticalAlignment="Top" Width="75" Click="btn_debugStart_Click" IsEnabled="False" Height="22"/>
-        <Button x:Name="btn_debugtray" Content="Debug Tray" HorizontalAlignment="Left" Margin="90,11,0,0" VerticalAlignment="Top" Width="75" Click="btn_debugtray_Click" IsEnabled="False" Height="22"/>
-        <Button x:Name="btn_debugbattery" Content="Dbg Battery" HorizontalAlignment="Left" Margin="250,10,0,0" VerticalAlignment="Top" Width="75" Click="btn_debugbattery_Click" IsEnabled="False" Height="22"/>
-        <Button x:Name="btn_debugrun" Content="Start" HorizontalAlignment="Left" Margin="330,11,0,0" VerticalAlignment="Top" Width="75" Click="btn_debugrun_Click" IsEnabled="False" Height="22"/>
-        <Button x:Name="btn_debugbeep" Content="Dbg Beep" HorizontalAlignment="Left" Margin="532,10,0,0" VerticalAlignment="Top" Width="75" Click="btn_debugbeep_Click" Height="22"/>
-        <Button x:Name="btn_debugvibrate" Content="Dbg Vibrate" HorizontalAlignment="Left" Margin="452,11,0,0" VerticalAlignment="Top" Width="75" Click="btn_debugvibrate_Click" Height="22"/>
-        <Button x:Name="btn_debugkill" Content="DbgKill" HorizontalAlignment="Left" Margin="410,12,0,0" VerticalAlignment="Top" Width="37" Click="btn_debugkill_Click" IsEnabled="False" Height="22"/>
+        <Button x:Name="btn_debuggrid" Content="Debug Grid" HorizontalAlignment="Left" Margin="170,4,0,0" VerticalAlignment="Top" Width="75" Click="btn_debuggrid_Click" IsEnabled="False" Height="22" Grid.Row="1"/>
+        <Button x:Name="btn_debugStart" Content="Debug Startup" HorizontalAlignment="Left" Margin="10,4,0,0" VerticalAlignment="Top" Width="75" Click="btn_debugStart_Click" IsEnabled="False" Height="22" Grid.Row="1"/>
+        <Button x:Name="btn_debugtray" Content="Debug Tray" HorizontalAlignment="Left" Margin="90,4,0,0" VerticalAlignment="Top" Width="75" Click="btn_debugtray_Click" IsEnabled="False" Height="22" Grid.Row="1"/>
+        <Button x:Name="btn_debugbattery" Content="Dbg Battery" HorizontalAlignment="Left" Margin="250,4,0,0" VerticalAlignment="Top" Width="75" Click="btn_debugbattery_Click" IsEnabled="False" Height="22" Grid.Row="1"/>
+        <Button x:Name="btn_debugrun" Content="Start" HorizontalAlignment="Left" Margin="330,4,0,0" VerticalAlignment="Top" Width="75" Click="btn_debugrun_Click" IsEnabled="False" Height="22" Grid.Row="1"/>
+        <Button x:Name="btn_debugbeep" Content="Dbg Beep" HorizontalAlignment="Left" Margin="532,4,0,0" VerticalAlignment="Top" Width="75" Click="btn_debugbeep_Click" Height="22" Grid.Row="1"/>
+        <Button x:Name="btn_debugvibrate" Content="Dbg Vibrate" HorizontalAlignment="Left" Margin="452,4,0,0" VerticalAlignment="Top" Width="75" Click="btn_debugvibrate_Click" Height="22" Grid.Row="1"/>
+        <Button x:Name="btn_debugkill" Content="DbgKill" HorizontalAlignment="Left" Margin="410,4,0,0" VerticalAlignment="Top" Width="37" Click="btn_debugkill_Click" IsEnabled="False" Height="22" Grid.Row="1"/>
 
-        <StatusBar Grid.Row="2">
+        <StatusBar Grid.Row="3">
             <TextBlock>Status:</TextBlock>
             <TextBlock x:Name="tb_status"></TextBlock>
         </StatusBar>
+
+        <Button x:Name="btn_debugxml" Content="Dbg Settings" HorizontalAlignment="Left" Margin="10,31,0,0" VerticalAlignment="Top" Width="75" Click="btn_debugxml_Click" Grid.Row="1" Height="22"/>
         
-        <Button x:Name="btn_debugxml" Content="Dbg Settings" HorizontalAlignment="Left" Margin="10,37,0,0" VerticalAlignment="Top" Width="75" Click="btn_debugxml_Click"/>
+        <Menu x:Name="menu" HorizontalAlignment="Stretch" VerticalAlignment="Stretch" Grid.Row="0">
+            <MenuItem Header="Options">
+                <MenuItem Header="Run On Windows Startup" HorizontalAlignment="Left" IsCheckable="True" x:Name="menu_startup" Click="menuItem_Click" />
+                <!--<MenuItem Header="Check for Updates When Application Starts" HorizontalAlignment="Left" />-->
+                <MenuItem Header="Start Minimized To Tray" HorizontalAlignment="Left" IsCheckable="True" x:Name="menu_startMinimized" Click="menuItem_Click"/>
+                <MenuItem Header="Close To Tray" HorizontalAlignment="Left" IsCheckable="True" x:Name="menu_closeToTray" Click="menuItem_Click"/>
+                <Separator />
+
+                <MenuItem Header="Notify When Battery" HorizontalAlignment="Left" >
+                    <MenuItem Header="Low" HorizontalAlignment="Left" IsCheckable="True" x:Name="menu_low"  Click="menuItem_Click"/>
+                    <MenuItem Header="Medium" HorizontalAlignment="Left" IsCheckable="True" x:Name="menu_medium" Click="menuItem_Click"/>
+                    <MenuItem Header="High" HorizontalAlignment="Left" IsCheckable="True" x:Name="menu_high" Click="menuItem_Click"/>
+                </MenuItem>
+
+                <MenuItem Header="Notify Limit" HorizontalAlignment="Left" >
+                    <MenuItem Header="Once" HorizontalAlignment="Left" IsCheckable="True" x:Name="menu_once" Click="menuItem_Click"/>
+                    <MenuItem Header="Every Hour" HorizontalAlignment="Left" IsCheckable="True" x:Name="menu_onehour" Click="menuItem_Click"/>
+                    <MenuItem Header="Every 4 Hours" HorizontalAlignment="Left" IsCheckable="True" x:Name="menu_4hours" Click="menuItem_Click"/>
+                </MenuItem>
+                <!-- "Beep on Notify" or "Notification Beep" -->
+                <MenuItem Header="Beep on Notify" HorizontalAlignment="Left" IsCheckable="True" x:Name="menu_beep" Click="menuItem_Click"/>
+            </MenuItem>
+        </Menu>
 
     </Grid>
 </Window>
