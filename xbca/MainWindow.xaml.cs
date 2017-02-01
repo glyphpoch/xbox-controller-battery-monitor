@@ -51,7 +51,7 @@ namespace xbca
         //
         // User settings. More in Settings.cs.
         //
-        private Settings m_Settings = new Settings();
+        private SettingsManager m_SettingsMng = new SettingsManager();
 
         //
         // Store WindowState so we can restore it after the the application is restored from system tray.
@@ -69,87 +69,14 @@ namespace xbca
         //
         public static string BaseDir = System.IO.Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location);
 
+        //!
+        //! DoxyGen comment test. MainWindow initialization. Starts thread, opens GUI, loads settings.
+        //!
         public MainWindow()
         {
             InitializeComponent();
-            try
-            {
-                //
-                // We'll be using one NotifyIcon object for all notifications, apperance in system tray, etc.
-                //
-                m_notifyIcon = new System.Windows.Forms.NotifyIcon();
-                m_notifyIcon.BalloonTipText = "Test Balloon tip text";
-                m_notifyIcon.BalloonTipTitle = "XBCA";
-                m_notifyIcon.Text = "XBCA";
-                m_notifyIcon.Visible = true;
 
-                //
-                // Load the icon for our application.
-                //
-                Stream iconStream = Application.GetResourceStream(new Uri("chemistry.ico", UriKind.Relative)).Stream;
-                m_notifyIcon.Icon = new System.Drawing.Icon(iconStream);
-
-                //
-                // Bind an event to handle what happens when a user clicks the notification or the icon in system tray.
-                //
-                m_notifyIcon.Click += new EventHandler(m_notifyIcon_Click);
-
-                //
-                // Bind events for recieving data back from out polling thread in xdata.cs.
-                //
-                xdata.NotificationEvent += ReceiveNotification;
-                xdata.DataEvent += ReceiveData;
-
-                //
-                // Load settings from settings.cfg or create a new settings file.
-                //
-                InitSettings();
-
-                //
-                // Check polling thread health.
-                //
-                System.Windows.Threading.DispatcherTimer dispatcherTimer = new System.Windows.Threading.DispatcherTimer();
-                dispatcherTimer.Tick += new EventHandler(dispatcherTimer_Tick);
-
-#if DEBUG
-                dispatcherTimer.Interval = new TimeSpan(0, 0, 30);
-#else
-                dispatcherTimer.Interval = new TimeSpan(0, 5, 0);
-#endif
-                dispatcherTimer.Start();
-
-                //
-                // Initialize DataGrid items.
-                //
-                for (int i = 0; i < XInputConstants.XUSER_MAX_COUNT; ++i)
-                {
-                    m_Items.Add(new Controller(i, (i + 1).ToString(), "Unknown", "Disconnected"));
-                }
-
-                //
-                // Start the polling thread.
-                //
-                Xd.Start(m_Settings);
-                tb_status.Text = "Thread running";
-
-                //
-                // Delete or remove registry entry for running on Windows startup based on user set options.
-                //
-                if (m_Settings.WinStart == true)
-                {
-                    AddToStartup();
-
-                    MinimizeToTray();
-                }
-                else
-                {
-                    RemoveFromStartup();
-                }
-            }
-            catch(Exception ex)
-            {
-                MessageBox.Show(ex.ToString());
-            }
+            Init();
         }
 
 #region ////////- Event handlers -\\\\\\\\\
@@ -189,7 +116,7 @@ namespace xbca
         {
             Console.WriteLine("debug run");
 
-            Xd.Start(m_Settings);
+            Xd.Start(m_SettingsMng.Config);
         }
 
         private void btn_debugbattery_Click(object sender, RoutedEventArgs e)
@@ -213,12 +140,24 @@ namespace xbca
             Xd.Stop();
         }
 
+        private void btn_debugxml_Click(object sender, RoutedEventArgs e)
+        {
+            Console.WriteLine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData));
+
+            Console.WriteLine(m_SettingsMng.Config.NotifyEvery.ToString());
+        }
+
         //
         // By clicking the notification bubble we restore the application back from system tray.
         //
         private void m_notifyIcon_Click(object sender, EventArgs e)
         {
             RestoreFromTray();
+        }
+
+        private void Window_Loaded(object sender, RoutedEventArgs e)
+        {
+            //Init();
         }
 
         //
@@ -246,7 +185,9 @@ namespace xbca
             if(Xd.State() == 1)
             {
                 Xd.Stop();
-            }            
+            }
+
+            m_SettingsMng.SaveConfig();        
 
 #if DEBUG
             Console.WriteLine("onClosing");
@@ -281,7 +222,7 @@ namespace xbca
                 m_notifyIcon.BalloonTipText = "ControllerID: " + device.ToString() + " Battery type: " + type + " Battery status: " + value;
                 m_notifyIcon.ShowBalloonTip(3000);
 
-                if(m_Settings.Beep)
+                if(m_SettingsMng.Config.Beep)
                 {
                     SystemSounds.Beep.Play();
                 }              
@@ -340,69 +281,92 @@ namespace xbca
 #endregion
 
 #region ////////- Methods -\\\\\\\\
+        private void Init()
+        {
+            try
+            {
+                //
+                // We'll be using one NotifyIcon object for all notifications, apperance in system tray, etc.
+                //
+                m_notifyIcon = new System.Windows.Forms.NotifyIcon();
+                m_notifyIcon.BalloonTipText = "Test Balloon tip text";
+                m_notifyIcon.BalloonTipTitle = "XBCA";
+                m_notifyIcon.Text = "XBCA";
+                m_notifyIcon.Visible = true;
+
+                //
+                // Load the icon for our application.
+                //
+                Stream iconStream = Application.GetResourceStream(new Uri("chemistry.ico", UriKind.Relative)).Stream;
+                m_notifyIcon.Icon = new System.Drawing.Icon(iconStream);
+
+                //
+                // Bind an event to handle what happens when a user clicks the notification or the icon in system tray.
+                //
+                m_notifyIcon.Click += new EventHandler(m_notifyIcon_Click);
+
+                //
+                // Bind events for recieving data back from out polling thread in xdata.cs.
+                //
+                xdata.NotificationEvent += ReceiveNotification;
+                xdata.DataEvent += ReceiveData;
+
+                //
+                // Load settings from settings.cfg or create a new settings file.
+                //
+                bool ISResult = InitSettings();
+
+                //
+                // Check polling thread health.
+                //
+                System.Windows.Threading.DispatcherTimer dispatcherTimer = new System.Windows.Threading.DispatcherTimer();
+                dispatcherTimer.Tick += new EventHandler(dispatcherTimer_Tick);
+                dispatcherTimer.Start();
+
+                //
+                // Initialize DataGrid items.
+                //
+                for (int i = 0; i < XInputConstants.XUSER_MAX_COUNT; ++i)
+                {
+                    m_Items.Add(new Controller(-1, (i + 1).ToString(), "Unknown", "Disconnected"));
+                }
+
+                //
+                // Start the polling thread.
+                //
+                Xd.Start(m_SettingsMng.Config);
+                tb_status.Text = "Thread running";
+                //OnUIThread(() => tb_status.Text = "Thread running");
+
+                //
+                // Delete or remove registry entry for running on Windows startup based on user set options.
+                //
+                if (m_SettingsMng.Config.WinStart == true)
+                {
+                    AddToStartup();
+                }
+                else
+                {
+                    RemoveFromStartup();
+                }
+
+                if(m_SettingsMng.Config.StartMinimized == true)
+                {
+                    MinimizeToTray();
+                }
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(ex.ToString());
+            }
+        }
+
         //
         // Reads or creates the settings file.
         //
-        private void InitSettings(bool debug = false)
+        private bool InitSettings(bool debug = false)
         {
-            string settingsPath = System.IO.Path.Combine(BaseDir, "settings.cfg");
-
-            if (File.Exists(settingsPath) || debug)
-            {
-                string line = "";
-                string[] split_line;
-                System.IO.StreamReader file = new System.IO.StreamReader(settingsPath);
-                while ((line = file.ReadLine()) != null)
-                {
-                    line = Regex.Replace(line, @"\s+", "");
-                    split_line = line.Split('=');
-                    
-                    if(split_line.Length >= 2)
-                    {
-                        if (split_line[0].ToLower() == Settings.MinimizeStr)
-                        {
-                            if (split_line[1].ToLower() == "true")
-                            {
-                                m_Settings.Minimize = true;
-                            }
-                        }
-                        else if(split_line[0].ToLower() == Settings.BeepStr)
-                        {
-                            if (split_line[1].ToLower() == "true")
-                            {
-                                m_Settings.Beep = true;
-                            }
-                        }
-                        else if(split_line[0].ToLower() == Settings.LevelStr)
-                        {
-                            int level;
-                            bool result = int.TryParse(split_line[1], out level);
-                            if (result == true)
-                            {
-                                m_Settings.Level = level;
-                            }
-                        }
-                        else if(split_line[0].ToLower() == Settings.WinStartStr)
-                        {
-                            if(split_line[1].ToLower() == "true")
-                            {
-                                m_Settings.WinStart = true;
-                            }
-                        }
-                    }
-                }
-
-                file.Close();
-            }
-            else
-            {
-                string[] lines = { Settings.MinimizeStr + "=" + m_Settings.Minimize.ToString(),
-                                   Settings.BeepStr + "=" + m_Settings.Beep.ToString(),
-                                   Settings.LevelStr + "=" + m_Settings.Level.ToString(),
-                                   Settings.WinStartStr + "=" + m_Settings.WinStart.ToString() };
-
-                File.WriteAllLines(settingsPath, lines);
-            }
+            return m_SettingsMng.LoadConfig();
         }
 
         //
@@ -486,6 +450,20 @@ namespace xbca
             Dispatcher.Invoke(() => datagrid_controller.ItemsSource = m_UpdateMe);
         }
 
-#endregion
+        private void OnUIThread(Action action)
+        {
+            if (Dispatcher.CheckAccess())
+            {
+                action();
+            }
+            else
+            {
+                // if you don't want to block the current thread while action is
+                // executed, you can also call Dispatcher.BeginInvoke(action);
+                Dispatcher.Invoke(action);
+            }
+        }
+
+        #endregion
     }
 }

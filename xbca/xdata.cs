@@ -71,15 +71,15 @@ namespace xbca
         {
             m_Run = false;
 
-            if(m_State == 1 && pollInfo.ThreadState == ThreadState.Running)
+            if (m_State == 1 && pollInfo.ThreadState == ThreadState.Running)
             {
                 pollInfo.Join();
-            }         
+            }
         }
 
         public void UpdateSettings(Settings settings)
         {
-            lock(m_Settings)
+            lock (m_Settings)
             {
                 m_Settings = null;
                 m_Settings = settings;
@@ -92,7 +92,7 @@ namespace xbca
             {
                 tryVibrate();
             }
-            catch(Exception ex)
+            catch (Exception ex)
             {
                 Console.WriteLine(ex.ToString());
             }
@@ -109,10 +109,12 @@ namespace xbca
             byte[] type = new byte[XInputConstants.XUSER_MAX_COUNT];
             byte[] value = new byte[XInputConstants.XUSER_MAX_COUNT];
             bool[] notified = new bool[XInputConstants.XUSER_MAX_COUNT];
+            byte[] last_level = new byte[XInputConstants.XUSER_MAX_COUNT];
 
-            for(int i = 0; i < notified.Length; ++i)
+            for (int i = 0; i < notified.Length; ++i)
             {
                 notified[i] = false;
+                last_level[i] = 255;
             }
 
             int numOfControllers = 0;
@@ -126,49 +128,52 @@ namespace xbca
 
                     RaiseTheEvent(false, 0, "", "");
 #else
-                result = getBatteryInfo(type, value, ref numOfControllers);
+                    result = getBatteryInfo(type, value, ref numOfControllers);
 
-                if(result == true)
-                {
-                    //
-                    // Check for all possible controllers. XUSER_MAX_COUNT is 4. Defined in Xinput.h and copied to Constants.cs.
-                    //
-                    for (int i = 0; i < XInputConstants.XUSER_MAX_COUNT; ++i)
+                    if (result == true)
                     {
-                        if (type[i] != (byte)BatteryTypes.BATTERY_TYPE_DISCONNECTED)
+                        //
+                        // Check for all possible controllers. XUSER_MAX_COUNT is 4. Defined in Xinput.h and copied to Constants.cs.
+                        //
+                        for (int i = 0; i < XInputConstants.XUSER_MAX_COUNT; ++i)
                         {
-                            //
-                            // Notify the user only once, unless otherwise specified.
-                            // Values will be 0,1,2,3 - More in Constants.
-                            //
-                            if(notified[i] == false && value[i] <= m_Settings.Level)
+                            if (type[i] != (byte)BatteryTypes.BATTERY_TYPE_DISCONNECTED)
                             {
                                 //
-                                // Raise an event which reports the status of the battery to the main app.
-                                // Alternative Enum name: Enum.GetName(typeof(BatteryTypes), type[i])
+                                // Notify the user only once, unless otherwise specified.
+                                // Values will be 0,1,2,3 - More in Constants.
                                 //
-                                RaiseTheEvent(true, i, Constants.GetEnumDescription((BatteryTypes)type[i]), Constants.GetEnumDescription((BatteryLevel)value[i]));
-                                notified[i] = true;
+                                if (notified[i] == false && value[i] <= m_Settings.Level)
+                                {
+                                    //
+                                    // Raise an event which reports the status of the battery to the main app.
+                                    // Alternative Enum name: Enum.GetName(typeof(BatteryTypes), type[i])
+                                    //
+                                    RaiseTheEvent(true, i, Constants.GetEnumDescription((BatteryTypes)type[i]), Constants.GetEnumDescription((BatteryLevel)value[i]));
+                                    notified[i] = true;
+                                    last_level[i] = value[i];
+                                }
+
+                                if (notified[i] == true && (value[i] > m_Settings.Level || value[i] < last_level[i]))
+                                {
+                                    notified[i] = false;
+                                }
                             }
-                            
-                            if(notified[i] == true && value[i] > m_Settings.Level)
+                            else
                             {
                                 notified[i] = false;
-                            }                    
-                        }
-                        else
-                        {
-                            notified[i] = false;
+                                last_level[i] = 255;
+                            }
                         }
                     }
-                }
-                else
-                {
-                    //
-                    // If no controllers are connected just reset the notified array. It's initialized to false by default.
-                    //
-                    notified = new bool[XInputConstants.XUSER_MAX_COUNT];
-                }
+                    else
+                    {
+                        //
+                        // If no controllers are connected just reset the notified array. It's initialized to false by default.
+                        //
+                        notified = new bool[XInputConstants.XUSER_MAX_COUNT];
+                        last_level = Enumerable.Repeat((byte)255, XInputConstants.XUSER_MAX_COUNT).ToArray();
+                    }
 #endif
                     //
                     // Send data about the controllers to the main application.
@@ -185,7 +190,7 @@ namespace xbca
                     }
                 }
             }
-            catch(Exception ex)
+            catch (Exception ex)
             {
                 Console.WriteLine(ex.ToString());
                 m_State = -1;
