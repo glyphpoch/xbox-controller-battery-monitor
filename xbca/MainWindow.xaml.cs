@@ -509,19 +509,23 @@ namespace xbca
         private void menuItem_Click(object sender, RoutedEventArgs e)
         {
             bool check = ((MenuItem)sender).IsChecked;
-            ((MenuItem)sender).IsChecked = !check;
+            ((MenuItem)sender).IsChecked = check;
 
             if (sender == menu_startup)
             {
-                m_SettingsMng.Config.WinStart = !check;
+                m_SettingsMng.Config.WinStart = check;
             }
             else if(sender == menu_startMinimized)
             {
-                m_SettingsMng.Config.StartMinimized = !check;
+                m_SettingsMng.Config.StartMinimized = check;
             }
             else if(sender == menu_closeToTray)
             {
                 
+            }
+            else if(sender == menu_beep)
+            {
+                m_SettingsMng.Config.Beep = check;
             }
             else if(sender == menu_low)
             {
