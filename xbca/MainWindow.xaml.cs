@@ -76,6 +76,7 @@ namespace xbca
         {
             InitializeComponent();
 
+            // Moved to Window_Loaded event.
             //Init();
         }
 
@@ -84,69 +85,6 @@ namespace xbca
         {
             var grid = sender as DataGrid;
             grid.ItemsSource = m_UpdateMe;
-        }
-
-        private void btn_debuggrid_Click(object sender, RoutedEventArgs e)
-        {
-            m_UpdateMe[m_Rnd.Next(0, XInputConstants.XUSER_MAX_COUNT)].Charge = m_Rnd.Next().ToString();
-
-            datagrid_controller.ItemsSource = null;
-            datagrid_controller.ItemsSource = m_UpdateMe;
-        }
-
-        private void btn_debugStart_Click(object sender, RoutedEventArgs e)
-        {
-            AddToStartup(); 
-        }
-
-        private void btn_debugtray_Click(object sender, RoutedEventArgs e)
-        {
-            //m_notifyIcon.BalloonTipText
-
-            //this.Hide();
-            Thread.Sleep(15000);
-
-            //System.Windows.Forms.NotifyIcon notify = new System.Windows.Forms.NotifyIcon();
-            m_notifyIcon.BalloonTipText = "The app has been minimised. Click the tray icon to show.";
-            //m_notifyIcon.BalloonTipTitle = "XBCA";
-            m_notifyIcon.ShowBalloonTip(2000);
-        }
-
-        private void btn_debugrun_Click(object sender, RoutedEventArgs e)
-        {
-            Console.WriteLine("debug run");
-
-            Xd.Start(m_SettingsMng.Config);
-        }
-
-        private void btn_debugbattery_Click(object sender, RoutedEventArgs e)
-        {
-
-        }
-
-        private void btn_debugbeep_Click(object sender, RoutedEventArgs e)
-        {
-            Thread beepThread = new Thread(DoBeep);
-            beepThread.Start();
-        }
-
-        private void btn_debugvibrate_Click(object sender, RoutedEventArgs e)
-        {
-            Xd.Vibrate();
-        }
-
-        private void btn_debugkill_Click(object sender, RoutedEventArgs e)
-        {
-            Xd.Stop();
-        }
-
-        private void btn_debugxml_Click(object sender, RoutedEventArgs e)
-        {
-            Console.WriteLine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData));
-
-            Console.WriteLine(m_SettingsMng.Config.NotifyEvery.ToString());
-
-            Console.WriteLine(m_SettingsMng.ToString());
         }
 
         //
@@ -221,18 +159,15 @@ namespace xbca
         // Thread will fire an event, if notification for battery status has to be displayed, that sends data to this handle.
         // This method then displays the notification.
         //
-        private void ReceiveNotification(bool display, int device, string type, string value)
+        private void ReceiveNotification(int device, string type, string value)
         {
-            if(display == true)
-            {
-                m_notifyIcon.BalloonTipText = "ControllerID: " + device.ToString() + " Battery type: " + type + " Battery status: " + value;
-                m_notifyIcon.ShowBalloonTip(3000);
+            m_notifyIcon.BalloonTipText = "ControllerID: " + device.ToString() + " Battery type: " + type + " Battery status: " + value;
+            m_notifyIcon.ShowBalloonTip(3000);
 
-                if(m_SettingsMng.Config.Beep)
-                {
-                    SystemSounds.Beep.Play();
-                }              
-            }
+            if(m_SettingsMng.Config.Beep)
+            {
+                SystemSounds.Beep.Play();
+            }              
 
             Console.WriteLine("data recieved from thread");
         }
@@ -240,7 +175,7 @@ namespace xbca
         //
         // Periodically recieve data about controllers from the polling thread.
         //
-        private void ReceiveData(byte[] type, byte[] value)
+        private void ReceiveData(byte[] type, byte[] value, byte[] note)
         {
             //
             // Update controller information.
@@ -248,20 +183,27 @@ namespace xbca
             Console.WriteLine(type.Length.ToString() + " " + value.Length.ToString());
             for(int i = 0; i < type.Length && i < value.Length; ++i)
             {
-                if(type[i] == (byte)BatteryTypes.BATTERY_TYPE_DISCONNECTED)
+                m_Items[i].Type = Constants.GetEnumDescription((BatteryTypes)type[i]);
+                m_Items[i].Charge = Constants.GetEnumDescription((BatteryLevel)value[i]);
+
+                if (note[i] == 0)
                 {
                     //
                     // This will ensure the controller that this controller is not displayed in the datagrid.
                     //
                     m_Items[i].ID = -1;
                 }
+                else if(type[i] == (byte)BatteryTypes.BATTERY_TYPE_DISCONNECTED
+                    && value[i] == (byte)BatteryLevel.BATTERY_LEVEL_EMPTY)
+                {
+                    m_Items[i].ID = i;
+                    m_Items[i].Type = Constants.GetEnumDescription((BatteryTypes)BatteryTypes.BATTERY_TYPE_UNKNOWN);
+                    m_Items[i].Charge = "Initializing/Unknown";
+                }
                 else
                 {
                     m_Items[i].ID = i;
-                }
-
-                m_Items[i].Type = Constants.GetEnumDescription((BatteryTypes)type[i]);
-                m_Items[i].Charge = Constants.GetEnumDescription((BatteryLevel)value[i]);
+                }         
             }
 
             //
@@ -271,17 +213,76 @@ namespace xbca
         }
 
         //
-        // Timer event for checking if the polling thread in xdata is still alive.
+        // TODO: Ignoring error at the moment, add more error/exception types later.
+        // This is to replace the dispatcherTimer polling.
         //
-        private void dispatcherTimer_Tick(object sender, EventArgs e)
+        private void ReceiveError(int error)
         {
+            OnUIThread(() => tb_status.Text = "Something went wrong. Please restart the application.");
+        }
+
+        private void menuItem_Click(object sender, RoutedEventArgs e)
+        {
+            bool check = ((MenuItem)sender).IsChecked;
+            ((MenuItem)sender).IsChecked = check;
+
+            if (sender == menu_startup)
+            {
+                m_SettingsMng.Config.WinStart = check;
+            }
+            else if (sender == menu_startMinimized)
+            {
+                m_SettingsMng.Config.StartMinimized = check;
+            }
+            else if (sender == menu_closeToTray)
+            {
+
+            }
+            else if (sender == menu_beep)
+            {
+                m_SettingsMng.Config.Beep = check;
+            }
+            else if (sender == menu_low)
+            {
+                m_SettingsMng.Config.Level = 1;
+                menu_medium.IsChecked = false;
+                menu_high.IsChecked = false;
+            }
+            else if (sender == menu_medium)
+            {
+                m_SettingsMng.Config.Level = 2;
+                menu_low.IsChecked = false;
+                menu_high.IsChecked = false;
+            }
+            else if (sender == menu_high)
+            {
+                m_SettingsMng.Config.Level = 3;
+                menu_low.IsChecked = false;
+                menu_medium.IsChecked = false;
+            }
+            else if (sender == menu_once)
+            {
+                m_SettingsMng.Config.NotifyEvery = 0;
+                menu_onehour.IsChecked = false;
+                menu_4hours.IsChecked = false;
+            }
+            else if (sender == menu_onehour)
+            {
+                m_SettingsMng.Config.NotifyEvery = 60;
+                menu_once.IsChecked = false;
+                menu_4hours.IsChecked = false;
+            }
+            else if (sender == menu_4hours)
+            {
+                m_SettingsMng.Config.NotifyEvery = 240;
+                menu_once.IsChecked = false;
+                menu_onehour.IsChecked = false;
+            }
+        
             if(Xd.State() == 1)
             {
-                tb_status.Text = "Thread running.";
-            }
-            else
-            {
-                tb_status.Text = "Something went wrong. Please restart the application.";
+                Xd.UpdateSettings(m_SettingsMng.Config);
+                OnUIThread(() => tb_status.Text = "Thread running");
             }
         }
 #endregion
@@ -316,6 +317,7 @@ namespace xbca
                 //
                 xdata.NotificationEvent += ReceiveNotification;
                 xdata.DataEvent += ReceiveData;
+                xdata.ErrorEvent += ReceiveError;
 
                 //
                 // Load settings from settings.cfg or create a new settings file.
@@ -325,10 +327,10 @@ namespace xbca
                 //
                 // Check polling thread health.
                 //
-                System.Windows.Threading.DispatcherTimer dispatcherTimer = new System.Windows.Threading.DispatcherTimer();
-                dispatcherTimer.Tick += new EventHandler(dispatcherTimer_Tick);
-                dispatcherTimer.Interval = new TimeSpan(0, 5, 0);
-                dispatcherTimer.Start();
+                //System.Windows.Threading.DispatcherTimer dispatcherTimer = new System.Windows.Threading.DispatcherTimer();
+                //dispatcherTimer.Tick += new EventHandler(dispatcherTimer_Tick);
+                //dispatcherTimer.Interval = new TimeSpan(0, 5, 0);
+                //dispatcherTimer.Start();
 
                 //
                 // Initialize DataGrid items.
@@ -340,10 +342,27 @@ namespace xbca
 
                 //
                 // Start the polling thread.
+                // Only run if we're on Windows 8 or higher. Windows 7 does not support getting the battery information.
                 //
-                Xd.Start(m_SettingsMng.Config);
-                //tb_status.Text = "Thread running";
-                OnUIThread(() => tb_status.Text = "Thread running");
+                Version win8version = new Version(6, 2, 9200, 0);
+                if (Environment.OSVersion.Platform == PlatformID.Win32NT &&
+                    Environment.OSVersion.Version >= win8version)
+                {
+                    // its win8 or higher.
+                    Xd.Start(m_SettingsMng.Config);
+                    if (ISResult == true)
+                    {
+                        OnUIThread(() => tb_status.Text = "Thread running");
+                    }
+                    else
+                    {
+                        OnUIThread(() => tb_status.Text = "Running with default settings! Ignore this if running the application for the first time.");
+                    }
+                }
+                else
+                {
+                    OnUIThread(() => tb_status.Text = "Windows 7 is not supported.");
+                }           
 
                 //
                 // Delete or remove registry entry for running on Windows startup based on user set options.
@@ -378,8 +397,9 @@ namespace xbca
             menu_startup.IsChecked = m_SettingsMng.Config.WinStart;
             //menu_closeToTray.IsChecked = m_SettingsMng.Config.WinStart;
             menu_startMinimized.IsChecked = m_SettingsMng.Config.StartMinimized;
+            menu_beep.IsChecked = m_SettingsMng.Config.Beep;
 
-            if(m_SettingsMng.Config.Level == 1)
+            if (m_SettingsMng.Config.Level == 1)
             {
                 menu_low.IsChecked = true;
             }
@@ -391,19 +411,29 @@ namespace xbca
             {
                 menu_high.IsChecked = true;
             }
+            else
+            {
+                m_SettingsMng.Config.Level = 1;
+                menu_low.IsChecked = true;
+            }
 
             /////
             if (m_SettingsMng.Config.NotifyEvery == 0)
             {
                 menu_once.IsChecked = true;
             }
-            else if (m_SettingsMng.Config.NotifyEvery == 1)
+            else if (m_SettingsMng.Config.NotifyEvery == 60)
             {
                 menu_onehour.IsChecked = true;
             }
-            else if (m_SettingsMng.Config.NotifyEvery == 2)
+            else if (m_SettingsMng.Config.NotifyEvery == 240)
             {
                 menu_4hours.IsChecked = true;
+            }
+            else
+            {
+                menu_once.IsChecked = true;
+                m_SettingsMng.Config.NotifyEvery = 0;
             }
 
             return result;
@@ -505,64 +535,5 @@ namespace xbca
         }
 
         #endregion
-
-        private void menuItem_Click(object sender, RoutedEventArgs e)
-        {
-            bool check = ((MenuItem)sender).IsChecked;
-            ((MenuItem)sender).IsChecked = check;
-
-            if (sender == menu_startup)
-            {
-                m_SettingsMng.Config.WinStart = check;
-            }
-            else if(sender == menu_startMinimized)
-            {
-                m_SettingsMng.Config.StartMinimized = check;
-            }
-            else if(sender == menu_closeToTray)
-            {
-                
-            }
-            else if(sender == menu_beep)
-            {
-                m_SettingsMng.Config.Beep = check;
-            }
-            else if(sender == menu_low)
-            {
-                m_SettingsMng.Config.Level = 1;
-                menu_medium.IsChecked = false;
-                menu_high.IsChecked = false;
-            }
-            else if (sender == menu_medium)
-            {
-                m_SettingsMng.Config.Level = 2;
-                menu_low.IsChecked = false;
-                menu_high.IsChecked = false;
-            }
-            else if (sender == menu_high)
-            {
-                m_SettingsMng.Config.Level = 3;
-                menu_low.IsChecked = false;
-                menu_medium.IsChecked = false;               
-            }
-            else if (sender == menu_once)
-            {
-                m_SettingsMng.Config.NotifyEvery = 0;
-                menu_onehour.IsChecked = false;
-                menu_4hours.IsChecked = false;
-            }
-            else if (sender == menu_onehour)
-            {
-                m_SettingsMng.Config.NotifyEvery = 1;
-                menu_once.IsChecked = false;
-                menu_4hours.IsChecked = false;
-            }
-            else if (sender == menu_4hours)
-            {
-                m_SettingsMng.Config.NotifyEvery = 2;
-                menu_once.IsChecked = false;
-                menu_onehour.IsChecked = false;
-            }        
-        }
     }
 }

@@ -33,7 +33,9 @@ namespace xbca
         [Description("Medium")]
         BATTERY_LEVEL_MEDIUM = 0x02,
         [Description("Full")]
-        BATTERY_LEVEL_FULL = 0x03
+        BATTERY_LEVEL_FULL = 0x03,
+        [Description("Test")]
+        BATTERY_LEVEL_TEST = 0x06
     };
 
     public class Constants

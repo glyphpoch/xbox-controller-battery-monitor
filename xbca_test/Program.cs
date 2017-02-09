@@ -27,7 +27,9 @@ namespace xbca_test
         public static extern int getMaxCount();
 
         [DllImport("D:\\Dropbox\\_Projects\\xbc_proto\\Debug\\xbc_dll.dll", CallingConvention = CallingConvention.StdCall)]
-        public static extern bool getBatteryInfo([MarshalAs(UnmanagedType.LPArray, SizeConst = XUSER_MAX_COUNT)] byte[] type, [MarshalAs(UnmanagedType.LPArray, SizeConst = XUSER_MAX_COUNT)] byte[] value, ref int numOfControllers);
+        public static extern bool getBatteryInfo([MarshalAs(UnmanagedType.LPArray, SizeConst = XUSER_MAX_COUNT)] byte[] type, 
+            [MarshalAs(UnmanagedType.LPArray, SizeConst = XUSER_MAX_COUNT)] byte[] value,
+            [MarshalAs(UnmanagedType.LPArray, SizeConst = XUSER_MAX_COUNT)] byte[] note, ref int numOfControllers);
 
         [DllImport("D:\\Dropbox\\_Projects\\xbc_proto\\Debug\\xbc_dll.dll", CallingConvention = CallingConvention.StdCall)]
         public static extern int tryVibrate();
@@ -42,7 +44,9 @@ namespace xbca_test
         public static extern int getMaxCount();
 
         [DllImport("xbc_dll.dll", CallingConvention = CallingConvention.Cdecl)]
-        public static extern bool getBatteryInfo([MarshalAs(UnmanagedType.LPArray, SizeConst = XUSER_MAX_COUNT)] byte[] type, [MarshalAs(UnmanagedType.LPArray, SizeConst = XUSER_MAX_COUNT)] byte[] value, ref int numOfControllers);
+        public static extern bool getBatteryInfo([MarshalAs(UnmanagedType.LPArray, SizeConst = XUSER_MAX_COUNT)] byte[] type,
+            [MarshalAs(UnmanagedType.LPArray, SizeConst = XUSER_MAX_COUNT)] byte[] value,
+            [MarshalAs(UnmanagedType.LPArray, SizeConst = XUSER_MAX_COUNT)] byte[] note, ref int numOfControllers);
 
         [DllImport("xbc_dll.dll", CallingConvention = CallingConvention.Cdecl)]
         public static extern int tryVibrate();
@@ -70,9 +74,10 @@ namespace xbca_test
                 {
                     byte[] type = new byte[XUSER_MAX_COUNT];
                     byte[] value = new byte[XUSER_MAX_COUNT];
+                    byte[] note = new byte[XUSER_MAX_COUNT];
                     int numControllers = 0;
 
-                    bool result = getBatteryInfo(type, value, ref numControllers);
+                    bool result = getBatteryInfo(type, value, note, ref numControllers);
 
                     if(result == false)
                     {
@@ -83,11 +88,11 @@ namespace xbca_test
                         Console.WriteLine(numControllers.ToString() + " controllers connected");
                         for (int i = 0; i < XUSER_MAX_COUNT; ++i)
                         {
-                            if(type[i] != (byte)BatteryTypes.BATTERY_TYPE_DISCONNECTED)
-                            {
+                            //if(type[i] != (byte)BatteryTypes.BATTERY_TYPE_DISCONNECTED)
+                            //{
                                 Console.WriteLine("Controller: " + (i+1).ToString() + " Type: " + Enum.GetName(typeof(BatteryTypes), type[i])
                                     + " Battery level: " + Enum.GetName(typeof(BatteryLevel), value[i]) );
-                            }
+                            //}
                         }
                     }
                 }

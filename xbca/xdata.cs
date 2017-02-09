@@ -24,7 +24,8 @@ namespace xbca
 
         [DllImport("D:\\Dropbox\\_Projects\\xbc_proto\\Debug\\xbc_dll.dll", CallingConvention = CallingConvention.StdCall)]
         public static extern bool getBatteryInfo([MarshalAs(UnmanagedType.LPArray, SizeConst = XInputConstants.XUSER_MAX_COUNT)] byte[] type,
-            [MarshalAs(UnmanagedType.LPArray, SizeConst = XInputConstants.XUSER_MAX_COUNT)] byte[] value, ref int numOfControllers);
+            [MarshalAs(UnmanagedType.LPArray, SizeConst = XInputConstants.XUSER_MAX_COUNT)] byte[] value,
+            [MarshalAs(UnmanagedType.LPArray, SizeConst = XInputConstants.XUSER_MAX_COUNT)] byte[] note, ref int numOfControllers);
 
         [DllImport("D:\\Dropbox\\_Projects\\xbc_proto\\Debug\\xbc_dll.dll", CallingConvention = CallingConvention.StdCall)]
         public static extern int tryVibrate();
@@ -40,7 +41,8 @@ namespace xbca
 
         [DllImport("xbc_dll.dll", CallingConvention = CallingConvention.Cdecl)]
         public static extern bool getBatteryInfo([MarshalAs(UnmanagedType.LPArray, SizeConst = XInputConstants.XUSER_MAX_COUNT)] byte[] type,
-            [MarshalAs(UnmanagedType.LPArray, SizeConst = XInputConstants.XUSER_MAX_COUNT)] byte[] value, ref int numOfControllers);
+            [MarshalAs(UnmanagedType.LPArray, SizeConst = XInputConstants.XUSER_MAX_COUNT)] byte[] value,
+            [MarshalAs(UnmanagedType.LPArray, SizeConst = XInputConstants.XUSER_MAX_COUNT)] byte[] notee, ref int numOfControllers);
 
         [DllImport("xbc_dll.dll", CallingConvention = CallingConvention.Cdecl)]
         public static extern int tryVibrate();
@@ -48,11 +50,14 @@ namespace xbca
         private Settings m_Settings;
         private volatile bool m_Run = true;
 
-        public delegate void NotificationDelegate(bool display, int device, string type, string value);
+        public delegate void NotificationDelegate(int device, string type, string value);
         public static event NotificationDelegate NotificationEvent;
 
-        public delegate void DataDelegate(byte[] type, byte[] value);
+        public delegate void DataDelegate(byte[] type, byte[] value, byte[] note);
         public static event DataDelegate DataEvent;
+
+        public delegate void ErrorDelegate(int error);
+        public static event ErrorDelegate ErrorEvent;
 
         private int m_State = -1;
 
@@ -96,7 +101,6 @@ namespace xbca
             {
                 Console.WriteLine(ex.ToString());
             }
-
         }
 
         public int State()
@@ -108,8 +112,15 @@ namespace xbca
         {
             byte[] type = new byte[XInputConstants.XUSER_MAX_COUNT];
             byte[] value = new byte[XInputConstants.XUSER_MAX_COUNT];
+            byte[] note = new byte[XInputConstants.XUSER_MAX_COUNT];
+
             bool[] notified = new bool[XInputConstants.XUSER_MAX_COUNT];
             byte[] last_level = new byte[XInputConstants.XUSER_MAX_COUNT];
+            System.Diagnostics.Stopwatch[] notify_timer = new System.Diagnostics.Stopwatch[XInputConstants.XUSER_MAX_COUNT];
+            for(int i = 0; i < XInputConstants.XUSER_MAX_COUNT; ++i)
+            {
+                notify_timer[i] = new System.Diagnostics.Stopwatch();
+            }
 
             for (int i = 0; i < notified.Length; ++i)
             {
@@ -126,9 +137,36 @@ namespace xbca
 #if DEBUG
                     Console.WriteLine(dummy() + " " + Constants.GetEnumDescription((BatteryTypes)1));
 
-                    RaiseTheEvent(false, 0, "", "");
+                    //RaiseTheEvent(false, 0, "", "");
+
+                    Console.WriteLine("dbg settings: " + m_Settings.Level.ToString() + " " + m_Settings.NotifyEvery.ToString());
+
+                    if(numOfControllers == -1)
+                        throw new Exception();
+
+                    numOfControllers = -1;
+
+                    result = true;
 #else
-                    result = getBatteryInfo(type, value, ref numOfControllers);
+                    result = getBatteryInfo(type, value, note, ref numOfControllers);
+#endif                    
+                    for (int i = 0; i < XInputConstants.XUSER_MAX_COUNT; ++i)
+                    {
+                        if (notify_timer[i].IsRunning)
+                        {
+                            if (m_Settings.NotifyEvery != 0)
+                            {
+                                notify_timer[i].Stop();
+                            }
+                            else
+                            {
+                                if(notify_timer[i].Elapsed.Minutes > m_Settings.NotifyEvery)
+                                {
+                                    notified[i] = false;
+                                }
+                            }
+                        }
+                    }
 
                     if (result == true)
                     {
@@ -149,20 +187,36 @@ namespace xbca
                                     // Raise an event which reports the status of the battery to the main app.
                                     // Alternative Enum name: Enum.GetName(typeof(BatteryTypes), type[i])
                                     //
-                                    RaiseTheEvent(true, i, Constants.GetEnumDescription((BatteryTypes)type[i]), Constants.GetEnumDescription((BatteryLevel)value[i]));
+                                    RaiseTheEvent(i, Constants.GetEnumDescription((BatteryTypes)type[i]), Constants.GetEnumDescription((BatteryLevel)value[i]));
                                     notified[i] = true;
+
+                                    if (m_Settings.NotifyEvery != 0)
+                                    {
+                                        notify_timer[i].Start();
+                                    }
+
                                     last_level[i] = value[i];
                                 }
 
                                 if (notified[i] == true && (value[i] > m_Settings.Level || value[i] < last_level[i]))
                                 {
                                     notified[i] = false;
+
+                                    if (notify_timer[i].IsRunning)
+                                    {
+                                        notify_timer[i].Stop();
+                                    }
                                 }
                             }
                             else
                             {
                                 notified[i] = false;
                                 last_level[i] = 255;
+
+                                if (notify_timer[i].IsRunning)
+                                {
+                                    notify_timer[i].Stop();
+                                }
                             }
                         }
                     }
@@ -173,12 +227,20 @@ namespace xbca
                         //
                         notified = new bool[XInputConstants.XUSER_MAX_COUNT];
                         last_level = Enumerable.Repeat((byte)255, XInputConstants.XUSER_MAX_COUNT).ToArray();
+
+                        for (int i = 0; i < XInputConstants.XUSER_MAX_COUNT; ++i)
+                        {
+                            if (notify_timer[i].IsRunning)
+                            {
+                                notify_timer[i].Stop();
+                            }
+                        }
                     }
-#endif
+
                     //
                     // Send data about the controllers to the main application.
                     //
-                    RaiseDataEvent(type, value);
+                    RaiseDataEvent(type, value, note);
 
                     Console.WriteLine("sleep for a minute");
                     //
@@ -194,26 +256,39 @@ namespace xbca
             {
                 Console.WriteLine(ex.ToString());
                 m_State = -1;
+                //RaiseErrorEvent(-1);
             }
 
             m_State = 0;
+
+            if(m_Run == true)
+            {
+                RaiseErrorEvent(-1);
+            }
         }
 
-        private void RaiseTheEvent(bool display, int device, string type, string value)
+        private void RaiseTheEvent(int device, string type, string value)
         {
             Console.WriteLine("raising event in thread");
 
             //
             // Equals checking if TestEvent == null and then calling TestEvent()
             //
-            NotificationEvent?.Invoke(display, device, type, value);
+            NotificationEvent?.Invoke(device, type, value);
         }
 
-        private void RaiseDataEvent(byte[] type, byte[] value)
+        private void RaiseDataEvent(byte[] type, byte[] value, byte[] note)
         {
             Console.WriteLine("raising data event in thread");
 
-            DataEvent?.Invoke(type, value);
+            DataEvent?.Invoke(type, value, note);
+        }
+
+        private void RaiseErrorEvent(int error)
+        {
+            Console.WriteLine("raising error event in thread");
+
+            ErrorEvent?.Invoke(error);
         }
     }
 }

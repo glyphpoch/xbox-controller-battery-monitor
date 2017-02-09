@@ -21,5 +21,7 @@ extern "C" __declspec(dllexport) int dummy2(BYTE* arr, const int len)
 		arr[i] = i;
 	}
 
+	throw 20;
+
 	return -1;
 }
