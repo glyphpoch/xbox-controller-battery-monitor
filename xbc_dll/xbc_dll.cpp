@@ -3,7 +3,7 @@
 
 #include "stdafx.h"
 
-extern "C" __declspec(dllexport) bool getBatteryInfo(BYTE* type, BYTE* level, int & numOfControllers)
+extern "C" __declspec(dllexport) bool getBatteryInfo(BYTE* type, BYTE* level, BYTE* note, int & numOfControllers)
 {
 	DWORD dwResult;
 	numOfControllers = 0;
@@ -15,17 +15,19 @@ extern "C" __declspec(dllexport) bool getBatteryInfo(BYTE* type, BYTE* level, in
 		// Simply get the state of the controller from XInput.
 		dwResult = XInputGetState(i, &state);
 
-		level[i] = static_cast<BYTE>(BATTERY_LEVEL_FULL);
+		level[i] = static_cast<BYTE>(6);
 		type[i] = static_cast<BYTE>(BATTERY_TYPE_DISCONNECTED);
+		note[i] = 0;
 
 		if (dwResult == ERROR_SUCCESS)
 		{
 			// Controller is connected 
 			XINPUT_BATTERY_INFORMATION battery;
 			memset(&battery, 0, sizeof(XINPUT_BATTERY_INFORMATION));
+			note[i] = 1;
 
-			if (XInputGetBatteryInformation(0, BATTERY_DEVTYPE_GAMEPAD, &battery) == ERROR_SUCCESS)
-			{
+			if (XInputGetBatteryInformation(i, BATTERY_DEVTYPE_GAMEPAD, &battery) == ERROR_SUCCESS)
+			{				
 				level[i] = static_cast<BYTE>(battery.BatteryLevel);
 				type[i] = static_cast<BYTE>(battery.BatteryType);
 			}

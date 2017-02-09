@@ -1,1 +1,0 @@
-https://possemeeg.wordpress.com/2007/09/06/minimize-to-tray-icon-in-wpf/
