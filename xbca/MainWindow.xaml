@@ -52,6 +52,9 @@
                 </MenuItem>
                 <!-- "Beep on Notify" or "Notification Beep" -->
                 <MenuItem Header="Beep on Notify" HorizontalAlignment="Left" IsCheckable="True" x:Name="menu_beep" Click="menuItem_Click"/>
+
+                <Separator />
+                <MenuItem Header="Quit" HorizontalAlignment="Left" x:Name="menu_quit" Click="menu_quit_Click"/>
             </MenuItem>
         </Menu>
 

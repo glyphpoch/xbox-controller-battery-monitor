@@ -88,7 +88,8 @@ namespace xbca
         public override string ToString()
         {
             string settings = m_Settings.WinStart.ToString() + " " + m_Settings.StartMinimized.ToString()
-                + " " + m_Settings.Level.ToString() + " " + m_Settings.Beep.ToString() + " " + m_Settings.NotifyEvery.ToString();
+                + " " + m_Settings.Level.ToString() + " " + m_Settings.Beep.ToString() + " " + m_Settings.NotifyEvery.ToString()
+                + " " + m_Settings.CloseTray.ToString();
 
             return settings;
             //return base.ToString();
