@@ -2,6 +2,10 @@ Debug/
 Release/
 obj/
 bin/
+xbc_alarm/
+xbca_test/
+x64/
+SendMe/
 .vs/
 *.ipch
 *.db
