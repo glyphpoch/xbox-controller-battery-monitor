@@ -13,4 +13,5 @@ dummy/
 *.opendb
 *.TMP
 *.diagsession
+*.pcapng
 USBDevices.*
