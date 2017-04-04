@@ -62,15 +62,20 @@ namespace xbca
         //
         // Create xdata object that runs the thread for polling battery information.
         //
-        xdata Xd = new xdata();
+        private xdata Xd = new xdata();
 
         //
         // When application is started by Windows the working directory is system32 so we need to get the correct location of the assembly.
         //
-        public static string BaseDir = System.IO.Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location);
+        private static string BaseDir = System.IO.Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location);
+
+        //
+        // Use this for closing the app if the Close to Tray option is enabled.
+        //
+        private bool m_QuitPressed = false;
 
         //!
-        //! DoxyGen comment test. MainWindow initialization. Starts thread, opens GUI, loads settings.
+        //! TODO.
         //!
         public MainWindow()
         {
@@ -114,10 +119,6 @@ namespace xbca
                 m_storedWindowState = WindowState;
             }
 
-#if DEBUG
-            Console.WriteLine("statechanged");
-#endif
-
             base.OnStateChanged(e);
         }
 
@@ -126,16 +127,24 @@ namespace xbca
         //
         protected override void OnClosing(CancelEventArgs e)
         {
-            if(Xd.State() == 1)
-            {
-                Xd.Stop();
-            }
-
-            m_SettingsMng.SaveConfig();        
-
 #if DEBUG
             Console.WriteLine("onClosing");
 #endif
+            if(m_SettingsMng.Config.CloseTray == true && m_QuitPressed == false)
+            {
+                e.Cancel = true;
+
+                this.Hide();
+            }
+            else
+            {
+                if (Xd.State() == 1)
+                {
+                    Xd.Stop();
+                }
+
+                m_SettingsMng.SaveConfig();
+            }
 
             base.OnClosing(e);
         }
@@ -236,7 +245,7 @@ namespace xbca
             }
             else if (sender == menu_closeToTray)
             {
-
+                m_SettingsMng.Config.CloseTray = check;
             }
             else if (sender == menu_beep)
             {
@@ -285,9 +294,15 @@ namespace xbca
                 OnUIThread(() => tb_status.Text = "Thread running");
             }
         }
-#endregion
 
-#region ////////- Methods -\\\\\\\\
+        private void menu_quit_Click(object sender, RoutedEventArgs e)
+        {
+            m_QuitPressed = true;
+            Application.Current.Shutdown();
+        }
+        #endregion
+
+        #region ////////- Methods -\\\\\\\\
         private void Init()
         {
             try
@@ -323,14 +338,6 @@ namespace xbca
                 // Load settings from settings.cfg or create a new settings file.
                 //
                 bool ISResult = InitSettings();
-
-                //
-                // Check polling thread health.
-                //
-                //System.Windows.Threading.DispatcherTimer dispatcherTimer = new System.Windows.Threading.DispatcherTimer();
-                //dispatcherTimer.Tick += new EventHandler(dispatcherTimer_Tick);
-                //dispatcherTimer.Interval = new TimeSpan(0, 5, 0);
-                //dispatcherTimer.Start();
 
                 //
                 // Initialize DataGrid items.

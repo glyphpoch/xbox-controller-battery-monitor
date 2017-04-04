@@ -18,6 +18,7 @@ namespace xbca
             Level = 1;
             WinStart = false;
             NotifyEvery = 0;
+            CloseTray = false;
         }
         //
         // Minimize to system tray if True.
@@ -37,5 +38,7 @@ namespace xbca
         public bool WinStart { get; set; }
 
         public int NotifyEvery { get; set; }
+
+        public bool CloseTray { get; set; }
     }
 }
