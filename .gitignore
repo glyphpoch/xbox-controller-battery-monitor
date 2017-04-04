@@ -6,6 +6,7 @@ xbc_alarm/
 xbca_test/
 x64/
 SendMe/
+dummy/
 .vs/
 *.ipch
 *.db
