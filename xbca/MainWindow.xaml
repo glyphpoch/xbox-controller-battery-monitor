@@ -6,7 +6,7 @@
         xmlns:local="clr-namespace:xbca"
         mc:Ignorable="d"
         Icon="chemistry.ico"
-        Title="MainWindow" Height="350" Width="625"
+        Title="Xbox 360/One Controller Battery Monitor" Height="350" Width="625"
         Loaded="Window_Loaded">
 
     <Window.Resources>
