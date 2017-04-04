@@ -129,7 +129,7 @@
       <AdditionalDependencies>Xinput.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
     <PostBuildEvent>
-      <Command>xcopy /Y "$(OutDir)xbc_dll.dll" "$(SolutionDir)SendMe\$(ConfigurationName)\"</Command>
+      <Command>xcopy /Y "$(OutDir)xbc_dll.dll" "$(SolutionDir)BuildDir\$(ConfigurationName)\"</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
