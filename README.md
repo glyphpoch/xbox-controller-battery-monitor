@@ -9,7 +9,7 @@
 ## Installation
 
 * Place it in any folder on your computer.
-* When you first run it, it will create a default XML settings file in AppData/XBCA
+* When you first run it, it will create a default XML settings file in AppData\Roaming\XBCA.
 * Customize the settings and that's it!
 
 ## Usage
