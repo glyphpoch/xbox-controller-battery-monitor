@@ -13,3 +13,4 @@ dummy/
 *.opendb
 *.TMP
 *.diagsession
+USBDevices.*
