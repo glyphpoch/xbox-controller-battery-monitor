@@ -49,3 +49,4 @@ Mostly self-explanatory, except the *notify limit* which will alert you every X 
 
 * Detect when the controller is charging.
 * Clean and comment the code.
+* GUI improvements.
