@@ -1,5 +1,7 @@
 # Xbox 360/One Controller Battery Monitor
 
+Simple app that alerts you when the controller battery is low with a Windows system tray notification and (optionally) sound.
+
 ## Building
 
 * Open the solution in Visual Studio
