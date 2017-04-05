@@ -47,7 +47,6 @@ Mostly self-explanatory, except the *notify limit* which will alert you every X 
 
 ## To-do
 
-* Create a github release.
 * Detect when the controller is charging.
 * Implement Close-to-tray setting.
 * Clean and comment the code.
