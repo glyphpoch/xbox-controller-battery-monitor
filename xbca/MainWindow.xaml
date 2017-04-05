@@ -43,7 +43,7 @@
         </Grid.RowDefinitions>
 
         <DataGrid x:Name="datagrid_controller" HorizontalAlignment="Stretch"
-                  ColumnWidth="*" HorizontalGridLinesBrush="Silver" VerticalGridLinesBrush="Silver" Style="{DynamicResource DataGridStyle1}"
+                  IsReadOnly="True" ColumnWidth="*" HorizontalGridLinesBrush="Silver" VerticalGridLinesBrush="Silver" Style="{DynamicResource DataGridStyle1}"
                   Margin="10,10,10,10" VerticalAlignment="Stretch" Grid.Row="1" Loaded="controller_data_Loaded"
         />
 
