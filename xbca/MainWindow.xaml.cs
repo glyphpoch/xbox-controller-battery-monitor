@@ -200,7 +200,7 @@ namespace xbca
                     //
                     // This will ensure the controller that this controller is not displayed in the datagrid.
                     //
-                    m_Items[i].ID = 1;
+                    m_Items[i].ID = -1;
                 }
                 else if(type[i] == (byte)BatteryTypes.BATTERY_TYPE_DISCONNECTED
                     && value[i] == (byte)BatteryLevel.BATTERY_LEVEL_EMPTY)
