@@ -14,6 +14,24 @@
             <Setter Property="TextWrapping" Value="NoWrap" />
             <Setter Property="TextTrimming" Value="CharacterEllipsis" />
         </Style>
+
+        <Style x:Key="DataGridStyle1" TargetType="{x:Type DataGrid}">
+            <Setter Property="RowStyle" Value="{DynamicResource DataGridRowStyle}"/>
+            <Setter Property="CellStyle" Value="{DynamicResource DataGridCellStyle}"/>
+        </Style>
+
+        <Style x:Key="DataGridRowStyle" TargetType="DataGridRow">
+            <Setter Property="Background" Value="WhiteSmoke" />
+            <!-- <Setter Property="BorderBrush" Value="Red" /> -->
+        </Style>
+
+        <!--
+        <Style x:Key="DataGridCellStyle" TargetType="DataGridCell">
+            <Setter Property="BorderBrush" Value="Red" />
+        </Style>
+        -->
+            
+        
     </Window.Resources>
 
     <Grid>
@@ -24,7 +42,10 @@
             <RowDefinition Height="23"/>
         </Grid.RowDefinitions>
 
-        <DataGrid x:Name="datagrid_controller" HorizontalAlignment="Stretch" Margin="10,10,10,10" VerticalAlignment="Stretch" Grid.Row="1" Loaded="controller_data_Loaded"/>
+        <DataGrid x:Name="datagrid_controller" HorizontalAlignment="Stretch"
+                  ColumnWidth="*" HorizontalGridLinesBrush="Silver" VerticalGridLinesBrush="Silver" Style="{DynamicResource DataGridStyle1}"
+                  Margin="10,10,10,10" VerticalAlignment="Stretch" Grid.Row="1" Loaded="controller_data_Loaded"
+        />
 
         <StatusBar Grid.Row="2">
             <TextBlock>Status:</TextBlock>
@@ -54,6 +75,7 @@
                 <MenuItem Header="Beep on Notify" HorizontalAlignment="Left" IsCheckable="True" x:Name="menu_beep" Click="menuItem_Click"/>
 
                 <Separator />
+                
                 <MenuItem Header="Quit" HorizontalAlignment="Left" x:Name="menu_quit" Click="menu_quit_Click"/>
             </MenuItem>
         </Menu>
