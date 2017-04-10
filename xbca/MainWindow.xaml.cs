@@ -402,7 +402,7 @@ namespace xbca
             bool result = m_SettingsMng.LoadConfig();
 
             menu_startup.IsChecked = m_SettingsMng.Config.WinStart;
-            //menu_closeToTray.IsChecked = m_SettingsMng.Config.WinStart;
+            menu_closeToTray.IsChecked = m_SettingsMng.Config.CloseTray;
             menu_startMinimized.IsChecked = m_SettingsMng.Config.StartMinimized;
             menu_beep.IsChecked = m_SettingsMng.Config.Beep;
 
