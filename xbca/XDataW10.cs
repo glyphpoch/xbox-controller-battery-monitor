@@ -1,42 +1,77 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.ComponentModel;
 using System.Linq;
-using System.Reflection;
-using System.Runtime.InteropServices;
 using System.Text;
-using System.Threading;
 using System.Threading.Tasks;
+
+using System.Threading;
+
+using Windows.Gaming.Input;
+using Windows.Devices.Power;
 
 namespace xbca
 {
-    class xdata : XDataW10
+    class XDataW10
     {
-#if DEBUG
-        [DllImport("D:\\GoogleDrive\\dropbox_bak\\_Projects\\xbc_proto\\Debug\\xbc_dll.dll", CallingConvention = CallingConvention.Cdecl)]
-        public static extern int getMaxCount();
+        protected Settings m_Settings;
+        protected volatile bool m_Run = true;
 
-        [DllImport("D:\\GoogleDrive\\dropbox_bak\\_Projects\\xbc_proto\\Debug\\xbc_dll.dll", CallingConvention = CallingConvention.StdCall)]
-        public static extern bool getBatteryInfo([MarshalAs(UnmanagedType.LPArray, SizeConst = XInputConstants.XUSER_MAX_COUNT)] byte[] type,
-            [MarshalAs(UnmanagedType.LPArray, SizeConst = XInputConstants.XUSER_MAX_COUNT)] byte[] value,
-            [MarshalAs(UnmanagedType.LPArray, SizeConst = XInputConstants.XUSER_MAX_COUNT)] byte[] note, ref int numOfControllers);
+        public delegate void NotificationDelegate(int device, string type, string value);
+        public static event NotificationDelegate NotificationEvent;
 
-#else
-        [DllImport("xbc_dll.dll", CallingConvention = CallingConvention.StdCall)]
-        public static extern int getMaxCount();
+        public delegate void DataDelegate(byte[] type, byte[] value, byte[] note, string[] status);
+        public static event DataDelegate DataEvent;
 
-        [DllImport("xbc_dll.dll", CallingConvention = CallingConvention.StdCall)]
-        public static extern bool getBatteryInfo([MarshalAs(UnmanagedType.LPArray, SizeConst = XInputConstants.XUSER_MAX_COUNT)] byte[] type,
-            [MarshalAs(UnmanagedType.LPArray, SizeConst = XInputConstants.XUSER_MAX_COUNT)] byte[] value,
-            [MarshalAs(UnmanagedType.LPArray, SizeConst = XInputConstants.XUSER_MAX_COUNT)] byte[] note, ref int numOfControllers);
+        public delegate void ErrorDelegate(int error);
+        public static event ErrorDelegate ErrorEvent;
 
-#endif
+        protected int m_State = -1;
 
-        protected override void Poll()
+        protected Thread pollInfo;
+
+        public void Start(Settings settings)
         {
+            m_Settings = settings;
+            pollInfo = new Thread(Poll);
+            pollInfo.Start();
+
+            int initCount = Gamepad.Gamepads.Count();
+
+            m_State = 1;
+        }
+
+        public void Stop()
+        {
+            m_Run = false;
+
+            if (m_State == 1 && pollInfo.ThreadState == ThreadState.Running)
+            {
+                pollInfo.Join();
+            }
+        }
+
+        public void UpdateSettings(Settings settings)
+        {
+            lock (m_Settings)
+            {
+                m_Settings = null;
+                m_Settings = settings;
+            }
+        }
+
+        public int State()
+        {
+            return m_State;
+        }
+
+        protected virtual void Poll()
+        {
+            Thread.Sleep(500);
+
             byte[] type = new byte[XInputConstants.XUSER_MAX_COUNT];
             byte[] value = new byte[XInputConstants.XUSER_MAX_COUNT];
             byte[] note = new byte[XInputConstants.XUSER_MAX_COUNT];
+            string[] status = new string[XInputConstants.XUSER_MAX_COUNT];
 
             bool[] notified = new bool[XInputConstants.XUSER_MAX_COUNT];
             byte[] last_level = new byte[XInputConstants.XUSER_MAX_COUNT];
@@ -53,14 +88,45 @@ namespace xbca
                 last_level[i] = 255;
             }
 
-            int numOfControllers = 0;
             bool result = false;
             try
             {
                 while (m_Run)
                 {
-                    result = getBatteryInfo(type, value, note, ref numOfControllers);
-                                  
+                    //result = getBatteryInfo(type, value, note, ref numOfControllers);
+
+                    if(Gamepad.Gamepads.Count > 0)
+                    {
+                        result = true;
+
+                        for (int i = 0; i < Gamepad.Gamepads.Count; ++i)
+                        {
+                            BatteryReport batteryReport = Gamepad.Gamepads[i].TryGetBatteryReport();
+
+                            if(batteryReport != null)
+                            {
+                                if(batteryReport.RemainingCapacityInMilliwattHours != null && batteryReport.FullChargeCapacityInMilliwattHours != null)
+                                {
+                                    type[i] = (byte)BatteryTypes.BATTERY_TYPE_UNKNOWN;
+
+                                    int chargeLevel = ((int)batteryReport.RemainingCapacityInMilliwattHours * 100) / (int)batteryReport.FullChargeCapacityInMilliwattHours;
+
+                                    value[i] = chargeLevelToValue(chargeLevel);
+
+                                    byte noteLevel = (byte)chargeLevel;
+
+                                    if(noteLevel == 0)
+                                    {
+                                        noteLevel = 1;
+                                    }
+                                    note[i] = noteLevel;
+
+                                    status[i] = batteryReport.Status.ToString();
+                                } 
+                            }
+                        }
+                    }
+
                     for (int i = 0; i < XInputConstants.XUSER_MAX_COUNT; ++i)
                     {
                         if (notify_timer[i].IsRunning)
@@ -71,7 +137,7 @@ namespace xbca
                             }
                             else
                             {
-                                if(notify_timer[i].Elapsed.Minutes > m_Settings.NotifyEvery)
+                                if (notify_timer[i].Elapsed.Minutes > m_Settings.NotifyEvery)
                                 {
                                     notified[i] = false;
                                 }
@@ -147,11 +213,20 @@ namespace xbca
                             }
                         }
                     }
-
                     //
                     // Send data about the controllers to the main application.
                     //
-                    RaiseDataEvent(type, value, note);
+                    RaiseDataEvent(type, value, note, status);
+
+                    //
+                    // Reset arrays to default values.
+                    //
+                    for (int i = 0; i < XInputConstants.XUSER_MAX_COUNT; ++i)
+                    {
+                        value[i] = (byte)BatteryLevel.BATTERY_LEVEL_EMPTY;
+                        type[i] = (byte)BatteryTypes.BATTERY_TYPE_DISCONNECTED;
+                        note[i] = 0;
+                    }
 
                     Console.WriteLine("sleep for a minute");
                     //
@@ -172,10 +247,54 @@ namespace xbca
 
             m_State = 0;
 
-            if(m_Run == true)
+            if (m_Run == true)
             {
                 RaiseErrorEvent(-1);
             }
+        }
+
+        protected byte chargeLevelToValue(int chargeLevel)
+        {
+            if (chargeLevel >= (int)BatteryChargeThreshold.BATTERY_THRESHOLD_FULL)
+            {
+                return (byte)BatteryLevel.BATTERY_LEVEL_FULL;
+            }
+            else if (chargeLevel >= (int)BatteryChargeThreshold.BATTERY_THRESHOLD_MEDIUM)
+            {
+                return (byte)BatteryLevel.BATTERY_LEVEL_MEDIUM;
+            }
+            else if (chargeLevel >= (int)BatteryChargeThreshold.BATTERY_THRESHOLD_LOW)
+            {
+                return (byte)BatteryLevel.BATTERY_LEVEL_LOW;
+            }
+            else
+            {
+                return (byte)BatteryLevel.BATTERY_LEVEL_EMPTY;
+            }
+        }
+
+        protected void RaiseTheEvent(int device, string type, string value)
+        {
+            Console.WriteLine("raising event in thread");
+
+            //
+            // Equals checking if TestEvent == null and then calling TestEvent()
+            //
+            NotificationEvent?.Invoke(device, type, value);
+        }
+
+        protected void RaiseDataEvent(byte[] type, byte[] value, byte[] note, string[] status = null)
+        {
+            Console.WriteLine("raising data event in thread");
+
+            DataEvent?.Invoke(type, value, note, status);
+        }
+
+        protected void RaiseErrorEvent(int error)
+        {
+            Console.WriteLine("raising error event in thread");
+
+            ErrorEvent?.Invoke(error);
         }
     }
 }

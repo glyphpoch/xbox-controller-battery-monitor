@@ -62,7 +62,11 @@ namespace xbca
         //
         // Create xdata object that runs the thread for polling battery information.
         //
+#if USING_XINPUT
         private xdata Xd = new xdata();
+#else
+        private XDataW10 Xd = new XDataW10();
+#endif
 
         //
         // When application is started by Windows the working directory is system32 so we need to get the correct location of the assembly.
@@ -127,9 +131,6 @@ namespace xbca
         //
         protected override void OnClosing(CancelEventArgs e)
         {
-#if DEBUG
-            Console.WriteLine("onClosing");
-#endif
             if(m_SettingsMng.Config.CloseTray == true && m_QuitPressed == false)
             {
                 e.Cancel = true;
@@ -154,10 +155,6 @@ namespace xbca
         //
         protected override void OnClosed(EventArgs e)
         {
-#if DEBUG
-            Console.WriteLine("onClosed");
-#endif
-
             m_notifyIcon.Dispose();
             m_notifyIcon = null;
 
@@ -184,16 +181,22 @@ namespace xbca
         //
         // Periodically recieve data about controllers from the polling thread.
         //
-        private void ReceiveData(byte[] type, byte[] value, byte[] note)
+        private void ReceiveData(byte[] type, byte[] value, byte[] note, string[] status)
         {
             //
             // Update controller information.
             //
-            Console.WriteLine(type.Length.ToString() + " " + value.Length.ToString());
+            Console.WriteLine("recieved data " + type.Length.ToString() + " " + value.Length.ToString());
             for(int i = 0; i < type.Length && i < value.Length; ++i)
             {
+#if USING_XINPUT
                 m_Items[i].Type = Constants.GetEnumDescription((BatteryTypes)type[i]);
+#else
+                m_Items[i].Status = status[i];
+#endif
+
                 m_Items[i].Charge = Constants.GetEnumDescription((BatteryLevel)value[i]);
+                m_Items[i].Level = note[i].ToString() + "%";
 
                 if (note[i] == 0)
                 {
@@ -206,7 +209,10 @@ namespace xbca
                     && value[i] == (byte)BatteryLevel.BATTERY_LEVEL_EMPTY)
                 {
                     m_Items[i].ID = i;
+#if USING_XINPUT
                     m_Items[i].Type = Constants.GetEnumDescription((BatteryTypes)BatteryTypes.BATTERY_TYPE_UNKNOWN);
+#endif
+
                     m_Items[i].Charge = "Initializing/Unknown";
                 }
                 else
@@ -300,9 +306,9 @@ namespace xbca
             m_QuitPressed = true;
             Application.Current.Shutdown();
         }
-        #endregion
+#endregion
 
-        #region ////////- Methods -\\\\\\\\
+#region ////////- Methods -\\\\\\\\
         private void Init()
         {
             try
@@ -330,9 +336,9 @@ namespace xbca
                 //
                 // Bind events for recieving data back from out polling thread in xdata.cs.
                 //
-                xdata.NotificationEvent += ReceiveNotification;
-                xdata.DataEvent += ReceiveData;
-                xdata.ErrorEvent += ReceiveError;
+                XDataW10.NotificationEvent += ReceiveNotification;
+                XDataW10.DataEvent += ReceiveData;
+                XDataW10.ErrorEvent += ReceiveError;
 
                 //
                 // Load settings from settings.cfg or create a new settings file.
@@ -344,7 +350,7 @@ namespace xbca
                 //
                 for (int i = 0; i < XInputConstants.XUSER_MAX_COUNT; ++i)
                 {
-                    m_Items.Add(new Controller(-1, (i + 1).ToString(), "Unknown", "Disconnected"));
+                    m_Items.Add(new Controller(-1, (i + 1).ToString(), "Unknown", "Disconnected", "0%", "Unknown"));
                 }
 
                 //
@@ -541,6 +547,6 @@ namespace xbca
             }
         }
 
-        #endregion
+#endregion
     }
 }

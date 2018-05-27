@@ -38,6 +38,19 @@ namespace xbca
         BATTERY_LEVEL_TEST = 0x06
     };
 
+    public enum BatteryChargeThreshold : int
+    {
+        // Battery Charge Thresholds
+        [Description("Empty")]
+        BATTERY_THRESHOLD_EMPTY = 0,
+        [Description("Low")] // API returns 400 mW
+        BATTERY_THRESHOLD_LOW = 30,
+        [Description("Medium")]
+        BATTERY_THRESHOLD_MEDIUM = 60, // API returns 700 mW
+        [Description("Full")]
+        BATTERY_THRESHOLD_FULL = 90 // API returns 1000 mW
+    }
+
     public class Constants
     {
         public static string GetEnumDescription(Enum value)

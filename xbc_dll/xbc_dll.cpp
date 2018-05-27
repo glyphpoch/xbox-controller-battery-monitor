@@ -3,58 +3,72 @@
 
 #include "stdafx.h"
 
-extern "C" __declspec(dllexport) bool getBatteryInfo(BYTE* type, BYTE* level, BYTE* note, int & numOfControllers)
+extern "C" __declspec(dllexport) bool __stdcall getBatteryInfo(BYTE* type, BYTE* level, BYTE* note, int & numOfControllers)
 {
-	DWORD dwResult;
-	numOfControllers = 0;
-	for (DWORD i = 0; i< XUSER_MAX_COUNT; i++)
-	{
-		XINPUT_STATE state;
-		SecureZeroMemory(&state, sizeof(XINPUT_STATE));
+	try {
+		std::ofstream log("log.txt", std::ios::app);
 
-		// Simply get the state of the controller from XInput.
-		dwResult = XInputGetState(i, &state);
-
-		level[i] = static_cast<BYTE>(6);
-		type[i] = static_cast<BYTE>(BATTERY_TYPE_DISCONNECTED);
-		note[i] = 0;
-
-		if (dwResult == ERROR_SUCCESS)
+		try
 		{
-			// Controller is connected 
-			XINPUT_BATTERY_INFORMATION battery;
-			memset(&battery, 0, sizeof(XINPUT_BATTERY_INFORMATION));
-			note[i] = 1;
+			DWORD dwResult;
+			numOfControllers = 0;
+			for (DWORD i = 0; i< XUSER_MAX_COUNT; i++)
+			{
+				XINPUT_STATE state;
+				SecureZeroMemory(&state, sizeof(XINPUT_STATE));
 
-			if (XInputGetBatteryInformation(i, BATTERY_DEVTYPE_GAMEPAD, &battery) == ERROR_SUCCESS)
-			{				
-				level[i] = static_cast<BYTE>(battery.BatteryLevel);
-				type[i] = static_cast<BYTE>(battery.BatteryType);
+				// Simply get the state of the controller from XInput.
+				dwResult = XInputGetState(i, &state);
+
+				level[i] = static_cast<BYTE>(BATTERY_LEVEL_EMPTY);
+				type[i] = static_cast<BYTE>(BATTERY_TYPE_DISCONNECTED);
+				note[i] = 0;
+
+				log << "GetState Result: " << dwResult << " Packet number: " << state.dwPacketNumber << std::endl;
+
+				if (dwResult == ERROR_SUCCESS)
+				{
+					// Controller is connected 
+					XINPUT_BATTERY_INFORMATION battery;
+					SecureZeroMemory(&battery, sizeof(XINPUT_BATTERY_INFORMATION));
+
+					DWORD info = XInputGetBatteryInformation(i, BATTERY_DEVTYPE_GAMEPAD, &battery);
+				
+					log << "BatteryInfo Result " << i << ": " << info << std::endl;
+					note[i] = 1;
+
+					if (info == ERROR_SUCCESS)
+					{
+						level[i] = static_cast<BYTE>(battery.BatteryLevel);
+						type[i] = static_cast<BYTE>(battery.BatteryType);
+					}
+
+					++numOfControllers;
+				}
 			}
 
-			++numOfControllers;
+			if (numOfControllers > 0)
+			{
+				log << "------------------------------------" << std::endl;
+				return true;
+			}		
+		}
+		catch (const std::exception& ex)
+		{
+			log << "Exception: " << ex.what() << std::endl;
+
+			return false;
 		}
 	}
+	catch (const std::exception& fileex)
+	{
 
-	if (numOfControllers > 0)
-		return true;
-
+	}
+		
 	return false;
 }
 
-extern "C" __declspec(dllexport) DWORD __stdcall tryVibrate(int device)
-{
-	XINPUT_VIBRATION vibration;
-	ZeroMemory(&vibration, sizeof(XINPUT_VIBRATION));
-	vibration.wLeftMotorSpeed = 32000; // use any value between 0-65535 here
-	vibration.wRightMotorSpeed = 16000; // use any value between 0-65535 here
-
-	DWORD dwResult = XInputSetState(device, &vibration);
-
-	return dwResult;
-}
-
-extern "C" __declspec(dllexport) int getMaxCount()
+extern "C" __declspec(dllexport) int __stdcall getMaxCount()
 {
 	return XUSER_MAX_COUNT;
 }
