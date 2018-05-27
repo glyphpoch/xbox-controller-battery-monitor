@@ -18,11 +18,8 @@ namespace xbca
         {
             string appdata = Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData);
             string settingsRelative = "XBCA\\settings.xml";
-        
-            //Console.WriteLine(m_Appdata);
 
             m_PathToSettings = System.IO.Path.Combine(appdata, settingsRelative);
-            //Console.WriteLine(m_PathToSettings);
         }
 
         public Settings Config
@@ -44,6 +41,9 @@ namespace xbca
                     object oData = xsSerializer.Deserialize(srReader);
                     m_Settings = (Settings)oData;
                     srReader.Close();
+
+                    // Beeping is disabled because notifications make a noise anyway. This should be Windows settings based.
+                    m_Settings.Beep = false;
                 }
                 else
                 {
@@ -72,7 +72,9 @@ namespace xbca
                     xsSerializer.Serialize(swWriter, m_Settings);
                     swWriter.Close();
 
-                    Console.WriteLine("settings file written");
+#if DEBUG
+                    Console.WriteLine("Settings file written.");
+#endif
                 }
 
                 Console.WriteLine(tType.IsSerializable.ToString() + " " + m_PathToSettings);
@@ -81,7 +83,9 @@ namespace xbca
             }
             catch(Exception ex)
             {
-                Console.WriteLine("couldnt save config" + ex.ToString());
+#if DEBUG
+                Console.WriteLine("Couldn't save config: " + ex.ToString());
+#endif
                 return false;
             }
         }

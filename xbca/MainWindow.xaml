@@ -72,7 +72,7 @@
                     <MenuItem Header="Every 4 Hours" HorizontalAlignment="Left" IsCheckable="True" x:Name="menu_4hours" Click="menuItem_Click"/>
                 </MenuItem>
                 <!-- "Beep on Notify" or "Notification Beep" -->
-                <MenuItem Header="Beep on Notify" HorizontalAlignment="Left" IsCheckable="True" x:Name="menu_beep" Click="menuItem_Click"/>
+                <!-- <MenuItem Header="Beep on Notify" HorizontalAlignment="Left" IsCheckable="True" x:Name="menu_beep" Click="menuItem_Click"/> -->
 
                 <Separator />
                 

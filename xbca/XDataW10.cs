@@ -93,8 +93,6 @@ namespace xbca
             {
                 while (m_Run)
                 {
-                    //result = getBatteryInfo(type, value, note, ref numOfControllers);
-
                     if(Gamepad.Gamepads.Count > 0)
                     {
                         result = true;
@@ -122,7 +120,10 @@ namespace xbca
                                     note[i] = noteLevel;
 
                                     status[i] = batteryReport.Status.ToString();
-                                } 
+                                }
+
+                                // Check if design capacity is null and conclude that battery type is NiMH or there is no battery.
+                                // In that case we can't tell the charge level.
                             }
                         }
                     }
@@ -227,8 +228,9 @@ namespace xbca
                         type[i] = (byte)BatteryTypes.BATTERY_TYPE_DISCONNECTED;
                         note[i] = 0;
                     }
-
+#if DEBUG
                     Console.WriteLine("sleep for a minute");
+#endif
                     //
                     // Sleep for the defined times unless Stop request is sent by the main application.
                     //
@@ -275,7 +277,9 @@ namespace xbca
 
         protected void RaiseTheEvent(int device, string type, string value)
         {
+#if DEBUG
             Console.WriteLine("raising event in thread");
+#endif
 
             //
             // Equals checking if TestEvent == null and then calling TestEvent()
@@ -285,14 +289,18 @@ namespace xbca
 
         protected void RaiseDataEvent(byte[] type, byte[] value, byte[] note, string[] status = null)
         {
+#if DEBUG
             Console.WriteLine("raising data event in thread");
+#endif
 
             DataEvent?.Invoke(type, value, note, status);
         }
 
         protected void RaiseErrorEvent(int error)
         {
+#if DEBUG
             Console.WriteLine("raising error event in thread");
+#endif
 
             ErrorEvent?.Invoke(error);
         }

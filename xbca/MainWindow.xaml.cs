@@ -167,15 +167,16 @@ namespace xbca
         //
         private void ReceiveNotification(int device, string type, string value)
         {
-            m_notifyIcon.BalloonTipText = "ControllerID: " + device.ToString() + " Battery type: " + type + " Battery status: " + value;
+            m_notifyIcon.BalloonTipText = "ControllerID: " + device.ToString() /* + "\nBattery type: " + type */ + "\nBattery status: " + value;
             m_notifyIcon.ShowBalloonTip(3000);
 
             if(m_SettingsMng.Config.Beep)
             {
                 SystemSounds.Beep.Play();
-            }              
-
+            }
+#if DEBUG
             Console.WriteLine("data recieved from thread");
+#endif
         }
 
         //
@@ -186,7 +187,9 @@ namespace xbca
             //
             // Update controller information.
             //
+#if DEBUG
             Console.WriteLine("recieved data " + type.Length.ToString() + " " + value.Length.ToString());
+#endif
             for(int i = 0; i < type.Length && i < value.Length; ++i)
             {
 #if USING_XINPUT
@@ -253,10 +256,10 @@ namespace xbca
             {
                 m_SettingsMng.Config.CloseTray = check;
             }
-            else if (sender == menu_beep)
-            {
-                m_SettingsMng.Config.Beep = check;
-            }
+            //else if (sender == menu_beep)
+            //{
+            //    m_SettingsMng.Config.Beep = check;
+            //}
             else if (sender == menu_low)
             {
                 m_SettingsMng.Config.Level = 1;
@@ -410,7 +413,7 @@ namespace xbca
             menu_startup.IsChecked = m_SettingsMng.Config.WinStart;
             menu_closeToTray.IsChecked = m_SettingsMng.Config.CloseTray;
             menu_startMinimized.IsChecked = m_SettingsMng.Config.StartMinimized;
-            menu_beep.IsChecked = m_SettingsMng.Config.Beep;
+            //menu_beep.IsChecked = m_SettingsMng.Config.Beep;
 
             if (m_SettingsMng.Config.Level == 1)
             {
@@ -528,7 +531,9 @@ namespace xbca
                 }
             }
 
+#if DEBUG
             Console.WriteLine("updating datagrid");
+#endif
             Dispatcher.Invoke(() => datagrid_controller.ItemsSource = null);
             Dispatcher.Invoke(() => datagrid_controller.ItemsSource = m_UpdateMe);
         }

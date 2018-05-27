@@ -14,7 +14,7 @@ namespace xbca
         public Settings()
         {
             StartMinimized = true;
-            Beep = true;
+            Beep = false;
             Level = 1;
             WinStart = false;
             NotifyEvery = 0;
@@ -25,9 +25,13 @@ namespace xbca
         //
         public bool StartMinimized { get; set; }
         //
-        // Beep with notification if True.
+        // Beep with notification if True. Disabled.
         //
-        public bool Beep { get; set; }
+        public bool Beep
+        {
+            get { return false; }
+            set { value = false; }
+        }
         //
         // If lower or equal than Level then display notifications.
         //

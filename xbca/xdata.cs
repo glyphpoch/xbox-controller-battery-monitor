@@ -153,7 +153,9 @@ namespace xbca
                     //
                     RaiseDataEvent(type, value, note);
 
+#if DEBUG
                     Console.WriteLine("sleep for a minute");
+#endif
                     //
                     // Sleep for the defined times unless Stop request is sent by the main application.
                     //
@@ -165,9 +167,10 @@ namespace xbca
             }
             catch (Exception ex)
             {
+#if DEBUG
                 Console.WriteLine(ex.ToString());
+#endif
                 m_State = -1;
-                //RaiseErrorEvent(-1);
             }
 
             m_State = 0;
