@@ -4,81 +4,17 @@
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:xbca"
+        xmlns:views="clr-namespace:xbca.Views"
+        xmlns:viewmodels="clr-namespace:xbca.ViewModels"
         mc:Ignorable="d"
         Icon="chemistry.ico"
-        Title="Xbox 360/One Controller Battery Monitor" Height="350" Width="625"
-        Loaded="Window_Loaded">
-
+        Title="Xbox 360/One Controller Battery Monitor" Height="350" Width="625" Loaded="Window_Loaded">
     <Window.Resources>
-        <Style TargetType="TextBlock" x:Key="StatusBarTextBlock">
-            <Setter Property="TextWrapping" Value="NoWrap" />
-            <Setter Property="TextTrimming" Value="CharacterEllipsis" />
-        </Style>
-
-        <Style x:Key="DataGridStyle1" TargetType="{x:Type DataGrid}">
-            <Setter Property="RowStyle" Value="{DynamicResource DataGridRowStyle}"/>
-            <Setter Property="CellStyle" Value="{DynamicResource DataGridCellStyle}"/>
-        </Style>
-
-        <Style x:Key="DataGridRowStyle" TargetType="DataGridRow">
-            <Setter Property="Background" Value="WhiteSmoke" />
-            <!-- <Setter Property="BorderBrush" Value="Red" /> -->
-        </Style>
-
-        <!--
-        <Style x:Key="DataGridCellStyle" TargetType="DataGridCell">
-            <Setter Property="BorderBrush" Value="Red" />
-        </Style>
-        -->
-            
-        
+        <DataTemplate x:Name="mainViewTemplate" DataType="{x:Type viewmodels:MainWindowViewModel}">
+            <views:MainView DataContext="{Binding}"/>
+        </DataTemplate>
     </Window.Resources>
-
     <Grid>
-
-        <Grid.RowDefinitions>
-            <RowDefinition Height="20"/>
-            <RowDefinition/>
-            <RowDefinition Height="23"/>
-        </Grid.RowDefinitions>
-
-        <DataGrid x:Name="datagrid_controller" HorizontalAlignment="Stretch"
-                  IsReadOnly="True" ColumnWidth="*" HorizontalGridLinesBrush="Silver" VerticalGridLinesBrush="Silver" Style="{DynamicResource DataGridStyle1}"
-                  Margin="10,10,10,10" VerticalAlignment="Stretch" Grid.Row="1" Loaded="controller_data_Loaded"
-        />
-
-        <StatusBar Grid.Row="2">
-            <TextBlock>Status:</TextBlock>
-            <TextBlock x:Name="tb_status"></TextBlock>
-        </StatusBar>
-
-        <Menu x:Name="menu" HorizontalAlignment="Stretch" VerticalAlignment="Stretch" Grid.Row="0">
-            <MenuItem Header="Options">
-                <MenuItem Header="Run On Windows Startup" HorizontalAlignment="Left" IsCheckable="True" x:Name="menu_startup" Click="menuItem_Click" />
-                <!--<MenuItem Header="Check for Updates When Application Starts" HorizontalAlignment="Left" />-->
-                <MenuItem Header="Start Minimized To Tray" HorizontalAlignment="Left" IsCheckable="True" x:Name="menu_startMinimized" Click="menuItem_Click"/>
-                <MenuItem Header="Close To Tray" HorizontalAlignment="Left" IsCheckable="True" x:Name="menu_closeToTray" Click="menuItem_Click"/>
-                <Separator />
-
-                <MenuItem Header="Notify When Battery" HorizontalAlignment="Left" >
-                    <MenuItem Header="Low" HorizontalAlignment="Left" IsCheckable="True" x:Name="menu_low"  Click="menuItem_Click"/>
-                    <MenuItem Header="Medium" HorizontalAlignment="Left" IsCheckable="True" x:Name="menu_medium" Click="menuItem_Click"/>
-                    <MenuItem Header="High" HorizontalAlignment="Left" IsCheckable="True" IsEnabled="False" x:Name="menu_high" Click="menuItem_Click"/>
-                </MenuItem>
-
-                <MenuItem Header="Notify Limit" HorizontalAlignment="Left" >
-                    <MenuItem Header="Once" HorizontalAlignment="Left" IsCheckable="True" x:Name="menu_once" Click="menuItem_Click"/>
-                    <MenuItem Header="Every Hour" HorizontalAlignment="Left" IsCheckable="True" x:Name="menu_onehour" Click="menuItem_Click"/>
-                    <MenuItem Header="Every 4 Hours" HorizontalAlignment="Left" IsCheckable="True" x:Name="menu_4hours" Click="menuItem_Click"/>
-                </MenuItem>
-                <!-- "Beep on Notify" or "Notification Beep" -->
-                <!-- <MenuItem Header="Beep on Notify" HorizontalAlignment="Left" IsCheckable="True" x:Name="menu_beep" Click="menuItem_Click"/> -->
-
-                <Separator />
-                
-                <MenuItem Header="Quit" HorizontalAlignment="Left" x:Name="menu_quit" Click="menu_quit_Click"/>
-            </MenuItem>
-        </Menu>
-
+        <ContentControl Content="{Binding}"/>
     </Grid>
 </Window>

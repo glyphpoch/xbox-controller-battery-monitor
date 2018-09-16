@@ -117,4 +117,10 @@
   <resheader name="writer">
     <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </resheader>
+  <data name="MainWindowTitle" xml:space="preserve">
+    <value>Xbox 360/One Controller Battery Monitor</value>
+  </data>
+  <data name="StatusBarText" xml:space="preserve">
+    <value>Status:</value>
+  </data>
 </root>

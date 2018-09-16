@@ -81,12 +81,24 @@
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
     </ApplicationDefinition>
-    <Compile Include="Constants.cs" />
-    <Compile Include="Controller.cs" />
-    <Compile Include="Settings.cs" />
-    <Compile Include="SettingsManager.cs" />
-    <Compile Include="xdata.cs" />
-    <Compile Include="XDataW10.cs" />
+    <Compile Include="HelperClasses\DelegateCommand.cs" />
+    <Compile Include="Models\Constants.cs" />
+    <Compile Include="Models\Controller.cs" />
+    <Compile Include="Models\Settings.cs" />
+    <Compile Include="Models\SettingsManager.cs" />
+    <Compile Include="Models\XInputConstants.cs" />
+    <Compile Include="Resources\UIStrings.Designer.cs">
+      <AutoGen>True</AutoGen>
+      <DesignTime>True</DesignTime>
+      <DependentUpon>UIStrings.resx</DependentUpon>
+    </Compile>
+    <Compile Include="ValueConverters\BatteryTypeToDescriptionConverter.cs" />
+    <Compile Include="ValueConverters\ChargeValueToLevelConverter.cs" />
+    <Compile Include="ValueConverters\ControllerIdToHiddenConverter.cs" />
+    <Compile Include="ViewModels\MainWindowViewModel.cs" />
+    <Compile Include="Views\MainView.xaml.cs">
+      <DependentUpon>MainView.xaml</DependentUpon>
+    </Compile>
     <Page Include="MainWindow.xaml">
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
@@ -99,6 +111,10 @@
       <DependentUpon>MainWindow.xaml</DependentUpon>
       <SubType>Code</SubType>
     </Compile>
+    <Page Include="Views\MainView.xaml">
+      <Generator>MSBuild:Compile</Generator>
+      <SubType>Designer</SubType>
+    </Page>
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Properties\AssemblyInfo.cs">
@@ -118,6 +134,11 @@
       <Generator>ResXFileCodeGenerator</Generator>
       <LastGenOutput>Resources.Designer.cs</LastGenOutput>
     </EmbeddedResource>
+    <EmbeddedResource Include="Resources\UIStrings.resx">
+      <Generator>PublicResXFileCodeGenerator</Generator>
+      <LastGenOutput>UIStrings.Designer.cs</LastGenOutput>
+    </EmbeddedResource>
+    <None Include="design.tmp" />
     <None Include="Properties\Settings.settings">
       <Generator>SettingsSingleFileGenerator</Generator>
       <LastGenOutput>Settings.Designer.cs</LastGenOutput>
@@ -137,6 +158,7 @@
       <Install>false</Install>
     </BootstrapperPackage>
   </ItemGroup>
+  <ItemGroup />
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <PropertyGroup>
     <PostBuildEvent>xcopy /E /Y /R "$(ProjectDir)$(OutDir)$(TargetFileName)" "$(SolutionDir)BuildDir\$(ConfigurationName)\$(PlatformName)\"

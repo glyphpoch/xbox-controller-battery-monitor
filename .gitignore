@@ -3,9 +3,12 @@ Release/
 obj/
 bin/
 xbc_alarm/
+xbc_dll/
 xbca_test/
 x64/
+x86/
 SendMe/
+BuildDir/
 dummy/
 .vs/
 *.ipch
@@ -14,4 +17,18 @@ dummy/
 *.TMP
 *.diagsession
 *.pcapng
+*.user
 USBDevices.*
+xbc_proto (1).sln
+xbca/xdata (1).cs
+xbca/SettingsManager (1).cs
+xbca/Constants.cs
+xbca/Controller.cs
+xbca/Settings.cs
+xbca/SettingsManager.cs
+xbca/xdata.cs
+xbca/XDataW10.cs
+xbca/Models/ControllerReporter.cs
+xbca/ViewModels/some_old_code.cs
+xbca/ViewModels/ControllersViewModel.cs
+xbca/HelperClasses/AbstractViewModel.cs
