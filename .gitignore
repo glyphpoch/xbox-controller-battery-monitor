@@ -10,6 +10,7 @@ x86/
 SendMe/
 BuildDir/
 dummy/
+nuget_local/
 .vs/
 *.ipch
 *.db

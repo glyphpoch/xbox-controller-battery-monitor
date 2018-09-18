@@ -1,215 +1,313 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Collections.ObjectModel;
-using System.ComponentModel;
-using System.Globalization;
-using System.Linq;
-using System.Reflection;
-using System.Text;
-using System.Threading.Tasks;
-using System.Windows;
-using System.Windows.Data;
-using Windows.Devices.Power;
-using Windows.Gaming.Input;
-using xbca.HelperClasses;
-using xbca.Models;
-using static xbca.Models.Constants;
-
-namespace xbca.ViewModels
+﻿namespace Xbca.ViewModels
 {
+    using System;
+    using System.Collections.Generic;
+    using System.Collections.ObjectModel;
+    using System.ComponentModel;
+    using System.Globalization;
+    using System.Linq;
+    using System.Reflection;
+    using System.Text;
+    using System.Threading.Tasks;
+    using System.Windows;
+    using System.Windows.Data;
+    using Windows.Devices.Power;
+    using Windows.Gaming.Input;
+    using Xbca.HelperClasses;
+    using Xbca.Models;
+    using static Xbca.Models.Constants;
+
+    /// <summary>
+    /// Represents the main window view model class.
+    /// </summary>
     public class MainWindowViewModel : INotifyPropertyChanged
     {
-        private Settings m_config;
+        private Settings config;
 
         // TODO: move all controller collection related log to another subview.
-        private bool m_run;
+        private bool runPolling;
 
-        private ObservableCollection<Controller> m_controllers;
+        private ObservableCollection<Controller> controllers;
 
-        public ObservableCollection<Controller> Controllers { get; set; }
+        /// <summary>
+        /// Dictionary which links non roamable id's to time tracking objects.
+        /// </summary>
+        private Dictionary<string, NotificationTracker> notifyTracking;
 
-        public DelegateCommand QuitCommand { get; set; }
+        /// <summary>
+        /// Initializes a new instance of the <see cref="MainWindowViewModel"/> class.
+        /// </summary>
+        public MainWindowViewModel()
+        {
+            bool areDefaultSettings = false;
+            this.config = SettingsManager.LoadConfig(ref areDefaultSettings);
 
+            this.QuitCommand = new DelegateCommand(this.QuitMenuItemDoAction);
+
+            // TODO: this will be removed and replaced with something more dynamic.
+            this.controllers = new ObservableCollection<Controller>();
+
+            for (int i = 0; i < XInputConstants.XUSER_MAX_COUNT; ++i)
+            {
+                this.controllers.Add(new Controller());
+            }
+
+            if (areDefaultSettings)
+            {
+                this.StatusBarText = "Running with default settings! Ignore this if running the application for the first time.";
+            }
+            else
+            {
+                this.StatusBarText = "Program running normally.";
+            }
+
+            this.StartPollingAsync();
+        }
+
+        /// <summary>
+        /// Occurs when user needs to be notified that the battery charge level is low.
+        /// </summary>
         public event EventHandler NotificationEvent;
 
+        /// <summary>
+        /// Occurs when a propery has changed.
+        /// </summary>
         public event PropertyChangedEventHandler PropertyChanged;
 
+        /// <summary>
+        /// Gets or sets a collection of controllers.
+        /// </summary>
+        public ObservableCollection<Controller> Controllers { get; set; }
+
+        /// <summary>
+        /// Gets or sets a Quit command.
+        /// </summary>
+        public DelegateCommand QuitCommand { get; set; }
+
+        /// <summary>
+        /// Gets a value indicating whether the quit button was pressed.
+        /// </summary>
         public bool IsQuitPressed
         {
             get
             {
-                return m_run == false;
+                return this.runPolling == false;
             }
         }
 
-        public bool IsStartupChecked {
+        /// <summary>
+        /// Gets or sets a value indicating whether the run on startup options is checked.
+        /// </summary>
+        public bool IsStartupChecked
+        {
             get
             {
-                return m_config.RunOnStartup;
+                return this.config.RunOnStartup;
             }
+
             set
             {
-                m_config.RunOnStartup = value;
+                this.config.RunOnStartup = value;
 
-                if(m_config.RunOnStartup == true)
+                if (this.config.RunOnStartup == true)
                 {
-                    AddToStartup();
+                    this.AddToStartup();
                 }
                 else
                 {
-                    RemoveFromStartup();
+                    this.RemoveFromStartup();
                 }
             }
         }
 
+        /// <summary>
+        /// Gets or sets a value indicating whether the start minimized option is checked.
+        /// </summary>
         public bool IsStartMinimizedChecked
         {
             get
             {
-                return m_config.StartMinimized;
+                return this.config.StartMinimized;
             }
+
             set
             {
-                m_config.StartMinimized = value;
+                this.config.StartMinimized = value;
             }
         }
 
+        /// <summary>
+        /// Gets or sets a value indicating whether the close to tray option is checked.
+        /// </summary>
         public bool IsCloseToTrayChecked
         {
             get
             {
-                return m_config.CloseToTray;
+                return this.config.CloseToTray;
             }
+
             set
             {
-                m_config.CloseToTray = value;
+                this.config.CloseToTray = value;
             }
         }
 
-        // TODO: set these settings to correct values.
+        /// <summary>
+        /// Gets or sets a value indicating whether the notify when low option is checked.
+        /// </summary>
         public bool IsNotifyLowChecked
         {
             get
             {
-                return m_config.Level == 1;
+                return this.config.Level == 1;
             }
+
             set
             {
-                m_config.Level = 1;
-                RaisePropertyChanged("IsNotifyLowChecked");
-                RaisePropertyChanged("IsNotifyMediumChecked");
-                RaisePropertyChanged("IsNotifyHighChecked");
+                this.config.Level = 1;
+                this.RaisePropertyChanged("IsNotifyLowChecked");
+                this.RaisePropertyChanged("IsNotifyMediumChecked");
+                this.RaisePropertyChanged("IsNotifyHighChecked");
             }
         }
 
+        /// <summary>
+        /// Gets or sets a value indicating whether the notify when medium option is checked.
+        /// </summary>
         public bool IsNotifyMediumChecked
         {
             get
             {
-                return m_config.Level == 2;
+                return this.config.Level == 2;
             }
+
             set
             {
-                m_config.Level = 2;
-                RaisePropertyChanged("IsNotifyLowChecked");
-                RaisePropertyChanged("IsNotifyMediumChecked");
-                RaisePropertyChanged("IsNotifyHighChecked");
+                this.config.Level = 2;
+                this.RaisePropertyChanged("IsNotifyLowChecked");
+                this.RaisePropertyChanged("IsNotifyMediumChecked");
+                this.RaisePropertyChanged("IsNotifyHighChecked");
             }
         }
 
+        /// <summary>
+        /// Gets or sets a value indicating whether the notify when high option is checked.
+        /// </summary>
         public bool IsNotifyHighChecked
         {
             get
             {
-                return m_config.Level == 3;
+                return this.config.Level == 3;
             }
+
             set
             {
-                m_config.Level = 3;
-                RaisePropertyChanged("IsNotifyLowChecked");
-                RaisePropertyChanged("IsNotifyMediumChecked");
-                RaisePropertyChanged("IsNotifyHighChecked");
+                this.config.Level = 3;
+                this.RaisePropertyChanged("IsNotifyLowChecked");
+                this.RaisePropertyChanged("IsNotifyMediumChecked");
+                this.RaisePropertyChanged("IsNotifyHighChecked");
             }
         }
 
+        /// <summary>
+        /// Gets or sets a value indicating whether notify once option is checked.
+        /// </summary>
         public bool IsNotifyOnceChecked
         {
             get
             {
-                return m_config.NotifyEvery == 0;
+                return this.config.NotifyEvery == 0;
             }
+
             set
             {
-                m_config.NotifyEvery = 0;
-                RaisePropertyChanged("IsNotifyOnceChecked");
-                RaisePropertyChanged("IsNotifyEveryHourChecked");
-                RaisePropertyChanged("IsNotifyEvery4HoursChecked");
+                this.config.NotifyEvery = 0;
+                this.RaisePropertyChanged("IsNotifyOnceChecked");
+                this.RaisePropertyChanged("IsNotifyEveryHourChecked");
+                this.RaisePropertyChanged("IsNotifyEvery4HoursChecked");
             }
         }
 
+        /// <summary>
+        /// Gets or sets a value indicating whether notify every hour option is checked.
+        /// </summary>
         public bool IsNotifyEveryHourChecked
         {
             get
             {
-                return m_config.NotifyEvery == 60;
+                return this.config.NotifyEvery == 60;
             }
+
             set
             {
-                m_config.NotifyEvery = 60;
-                RaisePropertyChanged("IsNotifyOnceChecked");
-                RaisePropertyChanged("IsNotifyEveryHourChecked");
-                RaisePropertyChanged("IsNotifyEvery4HoursChecked");
+                this.config.NotifyEvery = 60;
+                this.RaisePropertyChanged("IsNotifyOnceChecked");
+                this.RaisePropertyChanged("IsNotifyEveryHourChecked");
+                this.RaisePropertyChanged("IsNotifyEvery4HoursChecked");
             }
         }
 
+        /// <summary>
+        /// Gets or sets a value indicating whether notify every 4 hours option is checked.
+        /// </summary>
         public bool IsNotifyEvery4HoursChecked
         {
             get
             {
-                return m_config.NotifyEvery == 240;
+                return this.config.NotifyEvery == 240;
             }
+
             set
             {
-                m_config.NotifyEvery = 240;
-                RaisePropertyChanged("IsNotifyOnceChecked");
-                RaisePropertyChanged("IsNotifyEveryHourChecked");
-                RaisePropertyChanged("IsNotifyEvery4HoursChecked");
+                this.config.NotifyEvery = 240;
+                this.RaisePropertyChanged("IsNotifyOnceChecked");
+                this.RaisePropertyChanged("IsNotifyEveryHourChecked");
+                this.RaisePropertyChanged("IsNotifyEvery4HoursChecked");
             }
         }
 
+        /// <summary>
+        /// Gets or sets the status bar text.
+        /// </summary>
         public string StatusBarText { get; set; }
 
-        public MainWindowViewModel()
+        /// <summary>
+        /// Stores the setting to a file.
+        /// </summary>
+        public void StoreConfig()
         {
-            bool areDefaultSettings = false;
-            m_config = SettingsManager.LoadConfig(ref areDefaultSettings);
+            SettingsManager.TrySaveConfig(this.config);
+        }
 
-            QuitCommand = new DelegateCommand(QuitMenuItemDoAction);
-
-            m_controllers = new ObservableCollection<Controller>();
-
-            for(int i = 0; i < XInputConstants.XUSER_MAX_COUNT; ++i)
+        /// <summary>
+        /// Polls the Windows 10 API for controller and battery data.
+        /// </summary>
+        protected virtual void PollOnceTest()
+        {
+            try
             {
-                m_controllers.Add(new Controller());
-            }
+                this.UpdateControllerData();
 
-            if(areDefaultSettings)
-            {
-                StatusBarText = "Running with default settings! Ignore this if running the application for the first time.";
-            }
-            else
-            {
-                StatusBarText = "Program running normally.";
-            }
+                this.UpdateNotificationTrackers();
 
-            StartPollingAsync();
+                this.HandleNotifications();
+
+                this.Controllers = new ObservableCollection<Controller>(this.controllers);
+                this.RaisePropertyChanged("Controllers");
+            }
+            catch (Exception)
+            {
+                this.StatusBarText = "An exception occured while polling for controller data.";
+            }
         }
 
         private void StartPollingAsync()
         {
+            this.notifyTracking = new Dictionary<string, NotificationTracker>();
+
             Task task = Task.Run(async () =>
             {
-                await PollingTaskAsync();
+                await this.PollingTaskAsync();
             });
         }
 
@@ -217,11 +315,11 @@ namespace xbca.ViewModels
         /// Command for shutting down the application (even if the close to tray is on).
         /// Try to find a more elegant way than App.Current.Shutdown.
         /// </summary>
-        /// <param name="parameter"></param>
+        /// <param name="parameter">menu item comamnd parameter.</param>
         private void QuitMenuItemDoAction(object parameter)
         {
-            m_run = false;
-            StoreConfig();
+            this.runPolling = false;
+            this.StoreConfig();
             Application.Current.Shutdown();
         }
 
@@ -264,239 +362,141 @@ namespace xbca.ViewModels
         /// Main polling task - polls for new data every 20 seconds, checks if it's still supposed to be running every 100ms.
         /// TODO: The for loop was used because this was previously run in another thread, review.
         /// </summary>
-        /// <returns></returns>
+        /// <returns>a Task.</returns>
         private async Task PollingTaskAsync()
         {
-            m_run = true;
+            this.runPolling = true;
 
-            while (m_run)
+            while (this.runPolling)
             {
-                await Task.Run(new Action(PollOnce));
-                
-                for (int s = 0; s < 50 && (m_run); ++s) // was 200
+                await Task.Run(new Action(this.PollOnceTest));
+
+                // was 200
+                for (int s = 0; s < 50 && this.runPolling; ++s)
                 {
                     await Task.Delay(100);
                 }
             }
 
-            StatusBarText = "Program exiting.";
+            this.StatusBarText = "Program exiting.";
         }
 
-        /// <summary>
-        /// The method that polls the BatteryReport report class for information about connected controllers.
-        /// Virtual, because it's possible to use other API's to get battery info (XInput for example).
-        /// </summary>
-        protected virtual void PollOnce()
+        private void HandleNotifications()
         {
-            try
+            var trackersNeedingNotification = this.notifyTracking.Where(w =>
+                    (w.Value.Notified == false || w.Value.NeedsRenotification(this.config.NotifyEvery))
+                    && w.Value.CurrentValue <= this.config.Level).Select(w => w.Value);
+
+            foreach (var tracker in trackersNeedingNotification)
             {
-                bool gamepadDetected = false;
+                // Display notifications.
+                var controllerData = this.controllers.Where(w => w.UniqueId == tracker.NonRoamableId).FirstOrDefault();
 
-                // Loop through all gamepads. Set the status of non connected ones to -1 so we won't display them.
-                for(int i = 0; i < XInputConstants.XUSER_MAX_COUNT; ++i)
+                if (controllerData != null)
                 {
-                    if(i < RawGameController.RawGameControllers.Count)
+                    this.NotifyBatteryLow(controllerData.GetNotificationString());
+                    tracker.Notified = true;
+
+                    if (this.config.NotifyEvery != 0)
                     {
-                        gamepadDetected = true;
-                        var gameController = RawGameController.RawGameControllers[i];
-
-                        var batteryReport = gameController.TryGetBatteryReport();
-
-                        if (batteryReport != null)
-                        {
-                            m_controllers[i].Id = i;
-                            m_controllers[i].Name = gameController.DisplayName; //  .GetHashCode().ToString();
-
-                            if (batteryReport.RemainingCapacityInMilliwattHours != null && batteryReport.FullChargeCapacityInMilliwattHours != null)
-                            {
-                                m_controllers[i].BatteryType = (byte)BatteryTypes.BATTERY_TYPE_UNKNOWN;
-
-                                int chargeLevel = ((int)batteryReport.RemainingCapacityInMilliwattHours * 100) / (int)batteryReport.FullChargeCapacityInMilliwattHours;
-
-                                m_controllers[i].BatteryValue = ChargeLevelToValue(chargeLevel);
-
-                                byte noteLevel = (byte)chargeLevel;
-
-                                if (noteLevel == 0)
-                                {
-                                    noteLevel = 1;
-                                }
-                                m_controllers[i].Note = noteLevel;
-
-                                m_controllers[i].Status = batteryReport.Status.ToString();
-                            }
-
-                            // Check if design capacity is null and conclude that battery type is NiMH or there is no battery.
-                            // In that case we can't tell the charge level.
-                        }
-                        else
-                        {
-                            m_controllers[i].Id = -1;
-                        }
-                    }
-                }
-
-                // Reset notified status and timers.
-                for (int i = 0; i < XInputConstants.XUSER_MAX_COUNT; ++i)
-                {
-                    if (m_controllers[i].NotifyTimer.IsRunning)
-                    {
-                        // If notify every is not 0 - means that the user wants to be notified every X minutes.
-                        // TODO: Why do we stop it here?
-                        if (m_config.NotifyEvery != 0)
-                        {
-                            m_controllers[i].NotifyTimer.Stop();
-                        }
-                        else
-                        {
-                            if (m_controllers[i].NotifyTimer.Elapsed.Minutes > m_config.NotifyEvery)
-                            {
-                                m_controllers[i].Notified = false;
-                            }
-                        }
-                    }
-                }
-
-                if (gamepadDetected == true)
-                {
-                    //
-                    // Check for all possible controllers. XUSER_MAX_COUNT is 4. Defined in Xinput.h and copied to Constants.cs.
-                    //
-                    for (int i = 0; i < XInputConstants.XUSER_MAX_COUNT; ++i)
-                    {
-                        if (m_controllers[i].BatteryType != (byte)BatteryTypes.BATTERY_TYPE_DISCONNECTED)
-                        {
-                            //
-                            // Notify the user only once, unless otherwise specified.
-                            // Values will be 0,1,2,3 - More in Constants.
-                            //
-                            if (m_controllers[i].Notified == false && m_controllers[i].BatteryValue <= m_config.Level)
-                            {
-                                //
-                                // Raise an event which reports the status of the battery to the main window.
-                                // Alternative Enum name: Enum.GetName(typeof(BatteryTypes), type[i])
-                                //                           
-                                NotifyBatteryLow(string.Format("ControllerID: {0}\nBattery status: {1}", 
-                                    m_controllers[i].Id, Constants.GetEnumDescription((BatteryLevel)m_controllers[i].BatteryValue)));
-
-                                m_controllers[i].Notified = true;
-
-                                if (m_config.NotifyEvery != 0)
-                                {
-                                    m_controllers[i].NotifyTimer.Start();
-                                }
-
-                                m_controllers[i].LastLevel = m_controllers[i].BatteryValue;
-                            }
-
-                            if (m_controllers[i].Notified == true && (m_controllers[i].BatteryValue > m_config.Level || m_controllers[i].BatteryValue < m_controllers[i].LastLevel))
-                            {
-                                m_controllers[i].Notified = false;
-
-                                if (m_controllers[i].NotifyTimer.IsRunning)
-                                {
-                                    m_controllers[i].NotifyTimer.Stop();
-                                }
-                            }
-                        }
-                        else
-                        {
-                            m_controllers[i].Notified = false;
-                            m_controllers[i].LastLevel = 255;
-
-                            if (m_controllers[i].NotifyTimer.IsRunning)
-                            {
-                                m_controllers[i].NotifyTimer.Stop();
-                            }
-                        }
+                        tracker.RestartTimer();
                     }
                 }
                 else
                 {
-                    //
-                    // If no m_controllers are connected just reset the notified array. It's initialized to false by default.
-                    //
-                    for (int i = 0; i < XInputConstants.XUSER_MAX_COUNT; ++i)
-                    {
-                        m_controllers[i].Id = -1;
-                        m_controllers[i].Notified = false;
-                        m_controllers[i].LastLevel = 255;
+                    // The controller is not currently connected.
+                    // No need to reset anything now, once it gets reconnected again and the battery level is still below the notification level
 
-                        if (m_controllers[i].NotifyTimer.IsRunning)
-                        {
-                            m_controllers[i].NotifyTimer.Stop();
-                        }
-                    }
+                    // TODO: maybe stop timers after a certain time of the controller being disconnected.
+                    tracker.StopTimerIfZombie();
                 }
-
-                Controllers = new ObservableCollection<Controller>(m_controllers);
-                RaisePropertyChanged("Controllers");
-            }
-            catch
-            {
-
             }
         }
 
-        private void PollOnceTest()
+        private void UpdateNotificationTrackers()
         {
-            try
+            var connectedControllers = this.controllers.Where(w => w.Id >= 0);
+
+            foreach (var controller in connectedControllers)
             {
-                bool gamepadDetected = false;
-                for(int i = 0; i < Gamepad.Gamepads.Count && i < Controllers.Count; ++i)
+                if (!this.notifyTracking.ContainsKey(controller.UniqueId))
                 {
-                    var gamepad = Gamepad.Gamepads[i];
-                    
-                    var batteryReport = gamepad.TryGetBatteryReport();
-
-                    if(batteryReport != null)
+                    this.notifyTracking.Add(controller.UniqueId, new NotificationTracker()
                     {
-                        m_controllers[i].Id = i;
-                        gamepadDetected = true;
-                        m_controllers[i].BatteryType = (byte)BatteryTypes.BATTERY_TYPE_UNKNOWN;
+                        NonRoamableId = controller.UniqueId,
+                        CurrentValue = controller.BatteryValue,
+                        Notified = false,
+                    });
+                }
 
-                        m_controllers[i].Name = gamepad.GetHashCode().ToString();
+                this.notifyTracking[controller.UniqueId].CurrentValue = controller.BatteryValue;
 
-                        var currentReading = gamepad.GetCurrentReading();
-
-                        if (batteryReport.ChargeRateInMilliwatts == null)
-                        {
-                            // There's likely no battery present, or maybe alkaline batteries used. - Need to test this.
-
-                            // Set the battery to full or use a separate status for cable.
-                            m_controllers[i].Status = Windows.System.Power.BatteryStatus.NotPresent.ToString();
-                            m_controllers[i].BatteryValue = (byte)BatteryLevel.BATTERY_LEVEL_FULL;
-                        }
-                        else
-                        {
-                            // Battery is charging (ChargeRate is positive) or discharging (ChargeRate is negative).
-                            if (batteryReport.RemainingCapacityInMilliwattHours != null && batteryReport.FullChargeCapacityInMilliwattHours != null)
-                            {
-                                m_controllers[i].Status = batteryReport.Status.ToString();
-                                m_controllers[i].BatteryValue = CalculateChargeValue((int)batteryReport.RemainingCapacityInMilliwattHours,
-                                                                                      (int)batteryReport.FullChargeCapacityInMilliwattHours);
-                            }
-                        }
+                // Starts the renotification timer if the charge level is below threshold or stops it if it is above the threshold.
+                if (this.config.NotifyEvery != 0)
+                {
+                    if (controller.BatteryValue <= this.config.Level)
+                    {
+                        this.notifyTracking[controller.UniqueId].RunTimerIfNotRunning();
                     }
                     else
                     {
-                        // Set to unknown or don't show the controller?
-                        m_controllers[i].Id = -1;
+                        this.notifyTracking[controller.UniqueId].StopTimer();
+                        this.notifyTracking[controller.UniqueId].Notified = false;
                     }
-
-                    gamepadDetected = true;
                 }
-                
-                var notifiableControllers = m_controllers.Where(w => w.Id >= 0);
-
-                foreach(var controller in notifiableControllers)
+                else
                 {
-
+                    // Stop any running timers - since they shouldn't be running if NotifyEvery == 0.
+                    this.notifyTracking[controller.UniqueId].StopTimer();
                 }
             }
-            catch
-            {
+        }
 
+        private void UpdateControllerData()
+        {
+            for (int i = 0; i < RawGameController.RawGameControllers.Count && i < this.controllers.Count; ++i)
+            {
+                var gamepad = RawGameController.RawGameControllers[i];
+
+                var batteryReport = gamepad.TryGetBatteryReport();
+
+                if (batteryReport != null)
+                {
+                    this.controllers[i].Id = i;
+                    this.controllers[i].BatteryType = (byte)BatteryTypes.BATTERY_TYPE_UNKNOWN;
+
+                    this.controllers[i].Name = gamepad.DisplayName;
+                    this.controllers[i].UniqueId = gamepad.NonRoamableId;
+
+                    this.controllers[i].BatteryReportData = string.Format(
+                        "RemainingCapacity: {0}, FullCapacity: {1}\nDesignCapacity {2}, ChargeRateMw: {3}",
+                        batteryReport.RemainingCapacityInMilliwattHours ?? -1,
+                        batteryReport.FullChargeCapacityInMilliwattHours ?? -1,
+                        batteryReport.DesignCapacityInMilliwattHours ?? -1,
+                        batteryReport.ChargeRateInMilliwatts ?? -1);
+
+                    this.controllers[i].Status = batteryReport.Status.ToString();
+
+                    // Battery is charging (ChargeRate is positive) or discharging (ChargeRate is negative).
+                    if (batteryReport.RemainingCapacityInMilliwattHours != null && batteryReport.FullChargeCapacityInMilliwattHours != null)
+                    {
+                        this.controllers[i].BatteryValue = this.CalculateChargeValue(
+                                (int)batteryReport.RemainingCapacityInMilliwattHours,
+                                (int)batteryReport.FullChargeCapacityInMilliwattHours);
+                    }
+
+                    if (batteryReport.ChargeRateInMilliwatts == null)
+                    {
+                        this.controllers[i].BatteryType = (byte)BatteryTypes.BATTERY_TYPE_NOBATTERY;
+
+                        // TODO: Additional logic when for determining battery type when more data is available.
+                    }
+                }
+                else
+                {
+                    // Set to unknown or don't show the controller?
+                    this.controllers[i].Id = -1;
+                }
             }
         }
 
@@ -504,15 +504,15 @@ namespace xbca.ViewModels
         {
             int chargeLevel = (remainingCapacityInMWh * 100) / fullChargeCapacityInMWh;
 
-            return ChargeLevelToValue(chargeLevel);
+            return this.ChargeLevelToValue(chargeLevel);
         }
 
-        public void StoreConfig()
-        {
-            SettingsManager.TrySaveConfig(m_config);
-        }
-
-        protected byte ChargeLevelToValue(int chargeLevel)
+        /// <summary>
+        /// Converts charge level in percentage to value.
+        /// </summary>
+        /// <param name="chargeLevel">Charge level in percentage.</param>
+        /// <returns>The charge level value.</returns>
+        private byte ChargeLevelToValue(int chargeLevel)
         {
             if (chargeLevel >= (int)BatteryChargeThreshold.BATTERY_THRESHOLD_FULL)
             {
@@ -534,12 +534,12 @@ namespace xbca.ViewModels
 
         private void NotifyBatteryLow(string info)
         {
-            NotificationEvent?.Invoke(info, EventArgs.Empty);
+            this.NotificationEvent?.Invoke(info, EventArgs.Empty);
         }
 
         private void RaisePropertyChanged(string name)
         {
-            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(name));
+            this.PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(name));
         }
     }
 }

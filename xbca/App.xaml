@@ -1,7 +1,7 @@
-﻿<Application x:Class="xbca.App"
+﻿<Application x:Class="Xbca.App"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-             xmlns:local="clr-namespace:xbca"
+             xmlns:local="clr-namespace:Xbca"
              StartupUri="MainWindow.xaml">
     <Application.Resources>
          

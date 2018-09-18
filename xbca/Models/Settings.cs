@@ -1,58 +1,61 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-
-namespace xbca.Models
+﻿namespace Xbca.Models
 {
-    // http://stackoverflow.com/questions/453161/best-practice-to-save-application-settings-in-a-windows-forms-application
-    [Serializable()]
+    using System;
+    using System.Collections.Generic;
+    using System.Linq;
+    using System.Text;
+    using System.Threading.Tasks;
+
+    /// <summary>
+    /// Represents the settings class.
+    /// http://stackoverflow.com/questions/453161/best-practice-to-save-application-settings-in-a-windows-forms-application.
+    /// </summary>
+    [Serializable]
     public class Settings
     {
         /// <summary>
-        /// Default construtor. Initializes the settings to their default values.
+        /// Initializes a new instance of the <see cref="Settings"/> class.
         /// </summary>
         public Settings()
         {
-            StartMinimized = true;
-            Level = 1;
-            RunOnStartup = false;
-            NotifyEvery = 0;
-            CloseToTray = false;
+            this.StartMinimized = true;
+            this.Level = 1;
+            this.RunOnStartup = false;
+            this.NotifyEvery = 0;
+            this.CloseToTray = false;
         }
 
         /// <summary>
-        /// Minimize to system tray if True.
+        /// Gets or sets a value indicating whether the application should minimize to system tray.
         /// </summary>
         public bool StartMinimized { get; set; }
 
         /// <summary>
-        /// Beep with notification if True.
+        /// Gets a value indicating whether the notification should also make a beep sound.
         /// Beeping is disabled because notifications make a sound anyway. This should be Windows settings based.
         /// </summary>
         public bool Beep
         {
             get => false;
         }
-        
+
         /// <summary>
-        /// If lower or equal than Level then display notifications.
+        /// Gets or sets battery charge level.
         /// </summary>
         public int Level { get; set; }
-        
+
         /// <summary>
-        /// Create an registry entry for running the application on Windows startup.
+        /// Gets or sets a value indicating whether the application should start on windows startup.
         /// </summary>
         public bool RunOnStartup { get; set; }
 
         /// <summary>
-        /// Defines the notifications interval in minutes.
+        /// Gets or sets the notification inteval in minutes.
         /// </summary>
         public int NotifyEvery { get; set; }
 
         /// <summary>
-        /// Closes to tray if true, otherwise exits the app.
+        /// Gets or sets a value indicating whether closing the application minimizes it to system tray or exists it.
         /// </summary>
         public bool CloseToTray { get; set; }
 
@@ -62,9 +65,9 @@ namespace xbca.Models
         /// <returns>Concatenation of all settings.</returns>
         public override string ToString()
         {
-            string settings = RunOnStartup.ToString() + " " + StartMinimized.ToString()
-                + " " + Level.ToString() + " " + Beep.ToString() + " " + NotifyEvery.ToString()
-                + " " + CloseToTray.ToString();
+            string settings = this.RunOnStartup.ToString() + " " + this.StartMinimized.ToString()
+                + " " + this.Level.ToString() + " " + this.Beep.ToString() + " " + this.NotifyEvery.ToString()
+                + " " + this.CloseToTray.ToString();
 
             return settings;
         }
