@@ -91,11 +91,12 @@
         }
 
         /// <summary>
-        /// Stops the timer associated with a controller if it has been disconnected for more than 5 hours.
+        /// Stops the timer associated with a controller if it has been disconnected for more than notifyEvery minutes.
+        /// <param name="notifyEvery">Renotifications interval time in minutes.</param>
         /// </summary>
-        public void StopTimerIfZombie()
+        public void StopTimerIfZombie(int notifyEvery)
         {
-            if (this.NotifyTimer != null && this.NotifyTimer.IsRunning == true && this.NotifyTimer.Elapsed.Hours > 5)
+            if (this.NotifyTimer != null && this.NotifyTimer.IsRunning == true && this.NotifyTimer.Elapsed.Minutes > notifyEvery)
             {
                 this.NotifyTimer.Stop();
                 this.Notified = false;

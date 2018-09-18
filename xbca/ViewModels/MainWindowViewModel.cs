@@ -381,6 +381,9 @@
             this.StatusBarText = "Program exiting.";
         }
 
+        /// <summary>
+        /// Checks which notifications need to be displayed and raise a notify event.
+        /// </summary>
         private void HandleNotifications()
         {
             var trackersNeedingNotification = this.notifyTracking.Where(w =>
@@ -405,14 +408,20 @@
                 else
                 {
                     // The controller is not currently connected.
-                    // No need to reset anything now, once it gets reconnected again and the battery level is still below the notification level
+                    // No need to reset anything now, once it gets reconnected again and the battery level is still below the notification level it will either be notified again after a certain time.
+                    // Might be a good idea to reset the Notified status here so the user gets notified again in case the controller gets disconnected in the meantime (to preserve original functionality).
 
                     // TODO: maybe stop timers after a certain time of the controller being disconnected.
-                    tracker.StopTimerIfZombie();
+                    tracker.Notified = false;
+                    tracker.StopTimer();
+                    //tracker.StopTimerIfZombie(this.config.NotifyEvery);
                 }
             }
         }
 
+        /// <summary>
+        /// Adds new notification tracker if it doesn't exist for a unique id and start/stops it's timer - depending on whether the notify every option is set.
+        /// </summary>
         private void UpdateNotificationTrackers()
         {
             var connectedControllers = this.controllers.Where(w => w.Id >= 0);
@@ -452,6 +461,9 @@
             }
         }
 
+        /// <summary>
+        /// Updates controller data from RawGameController.
+        /// </summary>
         private void UpdateControllerData()
         {
             for (int i = 0; i < RawGameController.RawGameControllers.Count && i < this.controllers.Count; ++i)
@@ -469,20 +481,20 @@
                     this.controllers[i].UniqueId = gamepad.NonRoamableId;
 
                     this.controllers[i].BatteryReportData = string.Format(
-                        "RemainingCapacity: {0}, FullCapacity: {1}\nDesignCapacity {2}, ChargeRateMw: {3}",
+                        "RemainingCapacity: {0}, FullCapacity: {1}{2}DesignCapacity {3}, ChargeRateMw: {4}",
                         batteryReport.RemainingCapacityInMilliwattHours ?? -1,
                         batteryReport.FullChargeCapacityInMilliwattHours ?? -1,
+                        Environment.NewLine,
                         batteryReport.DesignCapacityInMilliwattHours ?? -1,
                         batteryReport.ChargeRateInMilliwatts ?? -1);
 
                     this.controllers[i].Status = batteryReport.Status.ToString();
 
-                    // Battery is charging (ChargeRate is positive) or discharging (ChargeRate is negative).
                     if (batteryReport.RemainingCapacityInMilliwattHours != null && batteryReport.FullChargeCapacityInMilliwattHours != null)
                     {
                         this.controllers[i].BatteryValue = this.CalculateChargeValue(
-                                (int)batteryReport.RemainingCapacityInMilliwattHours,
-                                (int)batteryReport.FullChargeCapacityInMilliwattHours);
+                            (int)batteryReport.RemainingCapacityInMilliwattHours,
+                            (int)batteryReport.FullChargeCapacityInMilliwattHours);
                     }
 
                     if (batteryReport.ChargeRateInMilliwatts == null)
