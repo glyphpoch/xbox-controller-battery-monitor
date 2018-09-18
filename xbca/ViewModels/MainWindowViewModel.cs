@@ -372,7 +372,7 @@
                 await Task.Run(new Action(this.PollOnceTest));
 
                 // was 200
-                for (int s = 0; s < 50 && this.runPolling; ++s)
+                for (int s = 0; s < 200 && this.runPolling; ++s)
                 {
                     await Task.Delay(100);
                 }
